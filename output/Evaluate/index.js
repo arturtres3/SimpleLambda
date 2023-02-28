@@ -23,9 +23,9 @@ var step = function (expr) {
             if (v1 instanceof Data_Maybe.Nothing) {
                 return Data_Maybe.Nothing.value;
             };
-            throw new Error("Failed pattern match at Term (line 22, column 26 - line 24, column 44): " + [ v1.constructor.name ]);
+            throw new Error("Failed pattern match at Evaluate (line 18, column 26 - line 20, column 44): " + [ v1.constructor.name ]);
         };
-        throw new Error("Failed pattern match at Term (line 20, column 10 - line 24, column 45): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at Evaluate (line 16, column 10 - line 20, column 45): " + [ v.constructor.name ]);
     };
     if (expr instanceof Structures.T_fst && expr.value0 instanceof Structures.T_pair) {
         return new Data_Maybe.Just(expr.value0.value0);
@@ -38,7 +38,7 @@ var step = function (expr) {
         if (v instanceof Data_Maybe.Nothing) {
             return Data_Maybe.Nothing.value;
         };
-        throw new Error("Failed pattern match at Term (line 28, column 10 - line 30, column 32): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at Evaluate (line 24, column 10 - line 26, column 32): " + [ v.constructor.name ]);
     };
     if (expr instanceof Structures.T_snd && expr.value0 instanceof Structures.T_pair) {
         return new Data_Maybe.Just(expr.value0.value1);
@@ -51,7 +51,7 @@ var step = function (expr) {
         if (v instanceof Data_Maybe.Nothing) {
             return Data_Maybe.Nothing.value;
         };
-        throw new Error("Failed pattern match at Term (line 34, column 10 - line 36, column 32): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at Evaluate (line 30, column 10 - line 32, column 32): " + [ v.constructor.name ]);
     };
     if (expr instanceof Structures.T_if && expr.value0 instanceof Structures.T_true) {
         return new Data_Maybe.Just(expr.value1);
@@ -67,7 +67,7 @@ var step = function (expr) {
         if (v instanceof Data_Maybe.Nothing) {
             return Data_Maybe.Nothing.value;
         };
-        throw new Error("Failed pattern match at Term (line 41, column 10 - line 43, column 32): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at Evaluate (line 37, column 10 - line 39, column 32): " + [ v.constructor.name ]);
     };
     return Data_Maybe.Nothing.value;
 };
@@ -84,7 +84,7 @@ var $$eval = function ($copy_expr) {
             $tco_done = true;
             return expr;
         };
-        throw new Error("Failed pattern match at Term (line 49, column 13 - line 51, column 20): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at Evaluate (line 45, column 13 - line 47, column 20): " + [ v.constructor.name ]);
     };
     while (!$tco_done) {
         $tco_result = $tco_loop($copy_expr);
@@ -92,6 +92,6 @@ var $$eval = function ($copy_expr) {
     return $tco_result;
 };
 export {
-    $$eval as eval,
-    step
+    step,
+    $$eval as eval
 };

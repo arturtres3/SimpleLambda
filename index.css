@@ -1,0 +1,79 @@
+body {
+    height: auto;
+    min-height: 100% !important;
+    font-family: Ubuntu;
+}
+
+.content{
+    margin-top: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    height: 80%;
+    justify-content: space-evenly
+}
+
+.targetSelect{
+    display: block;
+    /* text-align: center  ; */
+    margin-top: 30px;
+}
+
+.targetSelect input{
+    display: none;
+}
+
+.targetSelect label{
+    padding: 10px;
+    margin: 10px;
+    border: 2px solid gray;
+    border-radius: 4px;
+}
+
+.targetSelect label:hover{
+    border: 2px solid black;
+}
+
+.targetSelect input:checked + label{
+    background-color: lightgray;
+    border: 2px solid black;
+    /* display: none; */
+}
+
+
+.halves{
+    /* display: inherit; */
+    text-align: center;
+}
+
+.textBox{
+    margin: auto;
+    height: 350px;
+    width: 95%;
+    border: 1px solid gray;
+    border-radius: 4px;
+}
+
+.btns{
+    text-align: center;
+}
+
+.btns button{
+    display: inline-block;
+    font-size: large;
+    font-family: inherit;
+    margin: 0 5px;
+    padding: 6px;
+}
+
+.btns #open{
+    opacity: 0.6;
+    cursor:default;
+}
+
+.notes {
+    border: 1px solid gray;
+    border-radius: 4px;
+    margin: 20px 20px;
+    padding: 10px;
+    padding-top: 0px;
+}

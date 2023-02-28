@@ -5,27 +5,62 @@
     <link rel="icon" type="image/png" sizes="16x16" href="lambda.png">
     <meta charset="UTF-8">
     <title>Test</title>
+    <link rel="stylesheet" type="text/css" href="/index.css">
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap" rel="stylesheet">
   </head>
 
   <body>
     <script src="./test.js" type="module"></script>
-    <h1>Teste Lambda Omega</h1>
+    <h1>Teste STLC</h1>
 
-    <label>Run code: </label><a href="https://www.inf.ufrgs.br/~rma/simuladores/lambdaOmega.html">https://www.inf.ufrgs.br/~rma/simuladores/lambdaOmega.html</a>
+    <p>
+      <a href="https://www.inf.ufrgs.br/~rma/simuladores/lambdaTyped.html">https://www.inf.ufrgs.br/~rma/simuladores/lambdaTyped.html</a>
+    </p>
 
-    <br><br>
+    <form class="targetSelect">
+      
+      <input type="radio" id="STLC" name="language" value="0" >
+      <label for="STLC">STLC</label>
+        
+      <input type="radio" id="STLCSimple" name="language" value="1" checked>
+      <label for="STLCSimple">STLC Simples</label>
+        
+    </form>
 
-    <label for="textIn" >In:</label> <br>
-    <textarea id="textIn" rows="10" cols="100">snd (fst (if false then ((1,(2,3)),true) else ((4,(5,6)),false)))</textarea>
+
+    <div class="content">
+      <div id="leftSide" class="halves">
+        <label for="textIn" >In:</label> <br>
+        <textarea id="textIn" class="textBox" rows="10" cols="100" spellcheck="false">
+let a:Nat = 6 in 
+let b:Nat = 2 in 
     
-    <br><br>
+let double:Nat->Nat = func (n:Nat) = n*2 in 
     
-    <label for="textOut">Out:</label> <br>
-    <textarea id="textOut" rows="10" cols="100"> </textarea>
+-- let shiftInc:(Nat X Nat) -> (Nat X Nat) = func (p: Nat X Nat) = ((snd p), (snd p)+1) in
     
-    <br><br>
+double (if (!true || true) then a else b)
+        </textarea>
+      </div>
 
-    <button id="compile" type="button">Compile</button>
+
+      <div id="rightSide" class="halves">
+        <label for="textOut">Out:</label> <br>
+        <textarea id="textOut" class="textBox" rows="10" cols="100" spellcheck="false"> </textarea>
+      </div>
+    
+    </div>
+
+    <div class="btns">
+      <button id="compile" type="button">Compilar</button>
+      <button id="open" type="button">Abrir no Simulador</button>
+    </div>
+  
+
+    <div class="notes">
+      <h3>Notas sobre a geração de código</h3>
+      <p>Local previsto no layout para notas sobre a geração de código</p>
+    </div>
 
     
   </body>
