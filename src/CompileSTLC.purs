@@ -66,9 +66,9 @@ termToSTLC expr t env = case expr of
                                  termToSTLC e1 t env <> ")"
 
 
-            T_var id -> "_" <> id
+            T_var id -> "x_" <> id
 
-            T_func id t_var e1 -> "(\\_" <> id <> ": " <> typesSTLC (Just t_var) <> ". " 
+            T_func id t_var e1 -> "(\\x_" <> id <> ": " <> typesSTLC (Just t_var) <> ". " 
                                   <> termToSTLC e1 t (update env id t_var) <> ")"
 
             T_app e1 e2 -> "(" <> termToSTLC e1 t env <> " " <> termToSTLC e2 t env <> ")"
@@ -163,6 +163,102 @@ termToSTLC expr t env = case expr of
                                  <> termToSTLC e2 t env <> ")"
             _ -> "incompleto"
 
+lastType :: Maybe TermType -> Maybe TermType
+lastType t = case t of 
+            Just Nat -> Just Nat
+            Just Bool -> Just Bool
+
+            Just (Pair t1 _) -> lastType (Just t1)
+            Just (Func _ t2) -> lastType (Just t2)
+            Nothing -> Nothing 
+
+termToSTLCSimple :: Term -> Env -> String
+termToSTLCSimple expr env = case expr of 
+            T_true  -> "(\\a:A.\\b:A.a)"
+            T_false -> "(\\a:A.\\b:A.b)"
+            T_var id -> "x_" <> id
+
+            T_if e1 e2 e3 -> "((\\b:(A->A->A). \\e1:A. \\e2:A. b e1 e2) " <>
+                                termToSTLCSimple e1 env <> " " <>
+                                termToSTLCSimple e2 env <> " " <>
+                                termToSTLCSimple e3 env <> ")"
+
+            -- notas sobre a gereação de código 
+            -- Como STLC não tem polimorfismo, cada tipo precisa de uma definição diferente de par.
+            -- A biblioteca definida para STLC foi limitada em tipos de pares de Naturais e Booleanos apenas
+            -- para criar pares de tipos compostos (Pares, Funções, ...) usar STLC ext
+            T_pair e1 e2 -> (let t1 = (typeInfer env e1) in 
+                                let t2 = (typeInfer env e2) in 
+                                if t1 == t2 then 
+                                    ("(" <> makePairSTLC (typesSTLC (lastType t1)) <> " "
+                                    <> termToSTLCSimple e1 env <> " "
+                                    <> termToSTLCSimple e2 env <> ")")
+                                else 
+                                    "ERRO valores no par devem ser do mesmo tipo"
+                            )
+
+            T_fst e1 ->  case (typeInfer env e1) of 
+                        Just (Pair t1 t2) -> 
+                                    if t1 == t2 then
+                                        "((\\p: " <> makePairTypeSTLC (typesSTLC (lastType (typeInfer env e1))) <> ". p "
+                                        <> (termToSTLC T_true (lastType(Just t1)) env) <> ")"
+                                        <> termToSTLCSimple e1 env <> ")"
+
+                                    else "ERRO valores no par devem ser do mesmo tipo"
+                        _ -> "ERRO de tipo, fst deve receber par"
+
+            T_snd e1 ->  case (typeInfer env e1) of 
+                        Just (Pair t1 t2) -> 
+                                    if t1 == t2 then
+                                        "((\\p: " <> makePairTypeSTLC (typesSTLC (lastType (typeInfer env e1))) <> ". p "
+                                        <> (termToSTLC T_false (lastType(Just t1)) env) <> ")"
+                                        <> termToSTLCSimple e1 env <> ")"
+
+                                    else "ERRO valores no par devem ser do mesmo tipo"
+                        _ -> "ERRO de tipo, fst deve receber par"
+
+
+            T_app e1 e2 -> "(" <> termToSTLCSimple e1 env <> " " <> termToSTLCSimple e2 env <> ")"
+
+            T_let id t_var e1 e2 ->  termToSTLCSimple (T_app (T_func id t_var e2) e1) env
+
+            T_func id t_var e1 ->   "(\\x_" <> id <> ": " <> typesSTLC (Just t_var) <> ". " 
+                                    <> termToSTLCSimple e1 (update env id t_var) <> ")"
+
+            T_num n -> "(\\f:A->A.\\x:A." <> (makeNatural n) <> ")"
+            T_binop Add e1 e2 -> "((\\n1:(A->A)->A->A.\\n2:(A->A)->A->A.\\f:A->A. \\x:A. n1 f (n2 f x))"
+                                 <> termToSTLCSimple e1 env <> " "
+                                 <> termToSTLCSimple e2 env <> ")"
+            T_binop Mult e1 e2 -> "((\\n1:(A->A)->A->A.\\n2:(A->A)->A->A.\\f:A->A.\\x:A. n1 (n2 f) x)"
+                                 <> termToSTLCSimple e1 env <> " "
+                                 <> termToSTLCSimple e2 env <> ")"
+
+            T_binop And e1 e2 -> "((\\bin1: (A->A->A). " <>
+                                 "\\bin2: (A->A->A). " <>
+                                 "\\a: A. " <>
+                                 "\\b: A. " <>
+                                 "bin1 (bin2 a b) b) " <>
+                                 termToSTLCSimple e1 env <> " " <>
+                                 termToSTLCSimple e2 env <> ")"
+            
+            T_binop Or e1 e2 -> "((\\bin1: (A->A->A). " <>
+                                 "\\bin2: (A->A->A). " <>
+                                 "\\a: A. " <>
+                                 "\\b: A. " <>
+                                 "bin1 a (bin2 a b)) " <>
+                                 termToSTLCSimple e1 env <> " " <>
+                                 termToSTLCSimple e2 env <> ")"
+
+            T_unop Not e1 -> "((\\bin: (A->A->A). " <>
+                                 "\\a: A. " <>
+                                 "\\b: A. " <>
+                                 "bin b a) " <>
+                                 termToSTLCSimple e1 env <> ")"
+
+            _ -> "incompleto"
+
+
+
 -- versão simples 
 validIfSelectorsSimple :: Term -> Boolean
 validIfSelectorsSimple expr = case expr of 
@@ -256,9 +352,9 @@ makeSTLC expr = if canMakeSTLC expr then
                     "O termo seletor do if não pode conter variáveis.\nNão é possível representar subtração ou comparações entre naturais em STLC."
 
 makeSTLCSimple :: Term -> String
-makeSTLCSimple expr = if canMakeSTLCSimple expr then 
+makeSTLCSimple expr = if canMakeSTLC expr then 
                         case typeInfer emptyEnv expr of 
-                            Just _ -> termToSTLC expr Nothing emptyEnv
+                            Just _ -> termToSTLCSimple expr emptyEnv
                             Nothing -> "Erro de Tipo"
                     else
                         "Para gerar STLC simples os seletores de if só podem conter expressões lógicas.\nNão é possível representar subtração ou comparações entre naturais em STLC. "
