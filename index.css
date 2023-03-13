@@ -14,12 +14,23 @@ body {
 
 .targetSelect{
     display: block;
-    /* text-align: center  ; */
     margin-top: 30px;
+    user-select: none;
 }
 
 .targetSelect input{
-    display: none;
+    opacity: 0;
+    margin: -10px;
+    padding: 0;
+}
+
+.targetSelect input:focus-visible{
+    opacity: 100;
+    margin: initial;
+}
+
+.targetSelect input:focus + label{
+    border: 2px solid black;
 }
 
 .targetSelect label{
@@ -29,6 +40,8 @@ body {
     border-radius: 4px;
     max-width: 130px;
     display: inline-block;
+
+    user-select: none;
 }
 
 .targetSelect label:hover{
@@ -38,7 +51,25 @@ body {
 .targetSelect input:checked + label{
     background-color: lightgray;
     border: 2px solid black;
-    /* display: none; */
+    pointer-events: none;
+}
+
+.options{
+    display:block;
+    user-select: none;
+}
+
+.options input{
+    margin: 5px;
+    margin-left: 15px;
+}
+
+.options label{
+    user-select: none;
+}
+
+.options #ExtSTLC, #ExtLabel{
+    display: none;
 }
 
 
@@ -57,6 +88,7 @@ body {
 
 .btns{
     text-align: center;
+    user-select: none;
 }
 
 .btns button{

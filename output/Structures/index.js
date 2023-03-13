@@ -1,6 +1,9 @@
 import * as Data_Eq from "../Data.Eq/index.js";
 import * as Data_Int from "../Data.Int/index.js";
+import * as Data_List from "../Data.List/index.js";
+import * as Data_List_Types from "../Data.List.Types/index.js";
 import * as Data_Show from "../Data.Show/index.js";
+var union = /* #__PURE__ */ Data_List.union(Data_Eq.eqString);
 var Not = /* #__PURE__ */ (function () {
     function Not() {
 
@@ -280,7 +283,7 @@ var showUnop = {
         if (v instanceof Not) {
             return "~";
         };
-        throw new Error("Failed pattern match at Structures (line 90, column 1 - line 92, column 17): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at Structures (line 91, column 1 - line 93, column 17): " + [ v.constructor.name ]);
     }
 };
 var show = /* #__PURE__ */ Data_Show.show(showUnop);
@@ -297,7 +300,7 @@ var showType = function (t) {
     if (t instanceof Func) {
         return "(" + (showType(t.value0) + (" -> " + (showType(t.value1) + ")")));
     };
-    throw new Error("Failed pattern match at Structures (line 72, column 14 - line 76, column 77): " + [ t.constructor.name ]);
+    throw new Error("Failed pattern match at Structures (line 73, column 14 - line 77, column 77): " + [ t.constructor.name ]);
 };
 var showType$prime = {
     show: showType
@@ -334,7 +337,7 @@ var showBinop = {
         if (v instanceof And) {
             return " && ";
         };
-        throw new Error("Failed pattern match at Structures (line 78, column 1 - line 88, column 20): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at Structures (line 79, column 1 - line 89, column 20): " + [ v.constructor.name ]);
     }
 };
 var show1 = /* #__PURE__ */ Data_Show.show(showBinop);
@@ -378,10 +381,75 @@ var showTerm = function (t) {
     if (t instanceof T_unop) {
         return "(_unOp " + (show(t.value0) + (" " + (showTerm(t.value1) + ")")));
     };
-    throw new Error("Failed pattern match at Structures (line 47, column 14 - line 67, column 81): " + [ t.constructor.name ]);
+    throw new Error("Failed pattern match at Structures (line 48, column 14 - line 68, column 81): " + [ t.constructor.name ]);
 };
 var showTerm$prime = {
     show: showTerm
+};
+var listTermsUsed = function (expr) {
+    return function (l) {
+        if (expr instanceof T_true) {
+            return union(new Data_List_Types.Cons("true", Data_List_Types.Nil.value))(l);
+        };
+        if (expr instanceof T_false) {
+            return union(new Data_List_Types.Cons("false", Data_List_Types.Nil.value))(l);
+        };
+        if (expr instanceof T_if) {
+            return union(union(union(union(new Data_List_Types.Cons("if", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value0)(l)))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
+        };
+        if (expr instanceof T_pair) {
+            return union(union(union(new Data_List_Types.Cons("pair", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value0)(l)))(listTermsUsed(expr.value1)(l));
+        };
+        if (expr instanceof T_fst) {
+            return union(union(new Data_List_Types.Cons("fst", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value0)(l));
+        };
+        if (expr instanceof T_snd) {
+            return union(union(new Data_List_Types.Cons("snd", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value0)(l));
+        };
+        if (expr instanceof T_func) {
+            return union(listTermsUsed(expr.value2)(l))(l);
+        };
+        if (expr instanceof T_app) {
+            return union(union(listTermsUsed(expr.value0)(l))(l))(listTermsUsed(expr.value1)(l));
+        };
+        if (expr instanceof T_let) {
+            return union(union(listTermsUsed(expr.value2)(l))(l))(listTermsUsed(expr.value3)(l));
+        };
+        if (expr instanceof T_unop && expr.value0 instanceof Not) {
+            return union(union(new Data_List_Types.Cons("not", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l));
+        };
+        if (expr instanceof T_binop && expr.value0 instanceof Add) {
+            return union(union(union(new Data_List_Types.Cons("add", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
+        };
+        if (expr instanceof T_binop && expr.value0 instanceof And) {
+            return union(union(union(new Data_List_Types.Cons("and", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
+        };
+        if (expr instanceof T_binop && expr.value0 instanceof Or) {
+            return union(union(union(new Data_List_Types.Cons("or", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
+        };
+        if (expr instanceof T_binop && expr.value0 instanceof Div) {
+            return union(union(union(new Data_List_Types.Cons("div", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
+        };
+        if (expr instanceof T_binop && expr.value0 instanceof Mult) {
+            return union(union(union(new Data_List_Types.Cons("mult", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
+        };
+        if (expr instanceof T_binop && expr.value0 instanceof Eq) {
+            return union(union(union(new Data_List_Types.Cons("eq", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
+        };
+        if (expr instanceof T_binop && expr.value0 instanceof Ne) {
+            return union(union(union(new Data_List_Types.Cons("ne", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
+        };
+        if (expr instanceof T_binop && expr.value0 instanceof Gt) {
+            return union(union(union(new Data_List_Types.Cons("gt", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
+        };
+        if (expr instanceof T_binop && expr.value0 instanceof Lt) {
+            return union(union(union(new Data_List_Types.Cons("lt", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
+        };
+        if (expr instanceof T_binop && expr.value0 instanceof Sub) {
+            return union(union(union(new Data_List_Types.Cons("pair", new Data_List_Types.Cons("fst", new Data_List_Types.Cons("snd", new Data_List_Types.Cons("succ", new Data_List_Types.Cons("sub", Data_List_Types.Nil.value))))))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
+        };
+        return l;
+    };
 };
 var eqUnop = {
     eq: function (x) {
@@ -533,6 +601,7 @@ export {
     T_let,
     showTerm,
     showType,
+    listTermsUsed,
     showTerm$prime,
     showType$prime,
     eqTermType,

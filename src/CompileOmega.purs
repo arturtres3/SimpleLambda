@@ -3,9 +3,9 @@ module CompileOmega where
 import Prelude
 
 import Data.Int (decimal, toStringAs)
-import Data.List (List(..), (:), union)
+import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
-import Structures (BinopCode(..), Term(..), TermType(..), UnopCode(..))
+import Structures (BinopCode(..), Term(..), TermType(..), UnopCode(..), listTermsUsed)
 import TypeSystem (Env, emptyEnv, typeInfer, update)
 
 -- import Structures (Term(..), TermType(..))
@@ -16,38 +16,6 @@ shiftIncTerm = (T_func "p" (Pair Nat Nat)
                         (T_pair (T_snd (T_var "p"))  
                         (T_binop  Add  (T_snd (T_var "p")) (T_num 1)))
                     ) 
-
-contains :: (List String) -> String -> Boolean
-contains Nil _ = false 
-contains (str : tail) target = if (str == target) then true else (contains tail target)
-
-listTermsUsed :: Term -> (List String) -> List String 
-listTermsUsed expr l = case expr of 
-    T_true          -> union ("true":Nil) l
-    T_false         -> union ("false":Nil) l
-    T_if e1 e2 e3   -> union (union (union (union ("if":Nil) l) (listTermsUsed e1 l))(listTermsUsed e2 l )) (listTermsUsed e3 l)
-
-    T_pair e1 e2    -> union (union (union ("pair":Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
-    T_fst e1        -> union (union ("fst":Nil) l) (listTermsUsed e1 l)
-    T_snd e1        -> union (union ("snd":Nil) l) (listTermsUsed e1 l)
-
-    T_func _ _ e1   -> union (listTermsUsed e1 l) l 
-    T_app e1 e2     -> union (union (listTermsUsed e1 l) l) (listTermsUsed e2 l)
-    T_let _ _ e1 e2 -> union (union (listTermsUsed e1 l) l) (listTermsUsed e2 l)
-
-    T_unop Not e1      -> union (union ("not":Nil) l) (listTermsUsed e1 l)
-    T_binop Add e1 e2  -> union (union (union ("add" :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
-    T_binop And e1 e2  -> union (union (union ("and" :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
-    T_binop Or  e1 e2  -> union (union (union ("or"  :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
-    T_binop Div e1 e2  -> union (union (union ("div" :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
-    T_binop Mult e1 e2 -> union (union (union ("mult":Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
-    T_binop Eq  e1 e2  -> union (union (union ("eq"  :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
-    T_binop Ne  e1 e2  -> union (union (union ("ne"  :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
-    T_binop Gt  e1 e2  -> union (union (union ("gt"  :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
-    T_binop Lt  e1 e2  -> union (union (union ("lt"  :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
-
-    T_binop Sub e1 e2  -> union (union (union ("pair":"fst":"snd":"succ":"sub":Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
-    _                  -> l
 
 
 testTypes :: Maybe TermType -> String
@@ -194,7 +162,7 @@ termToOmegaDefs expr env = case expr of
             T_true  -> "true"
             T_false -> "false"
             T_var id -> "x_" <> id
-            T_num n -> toStringAs decimal n--"(\\\\C:*.\\f:C->C.\\x:C." <> (makeNatural n) <> ")"
+            T_num n -> toStringAs decimal n
 
             T_func id t_var e1 -> "(\\x_" <> id <> ": " <> makeTypesOmegaDefs (Just t_var) <> ". " 
                                   <> termToOmegaDefs e1 (update env id t_var) <> ")"
@@ -212,7 +180,7 @@ termToOmegaDefs expr env = case expr of
                                 <> termToOmegaDefs e2 env <> " "
                                 <> termToOmegaDefs e3 env <> ")"
 
-            (T_pair e1 e2) -> "(pair"
+            (T_pair e1 e2) -> "(pair "
                               <> " ["
                               <> (makeTypesOmegaDefs $ typeInfer env e1)
                               <> "]["
@@ -221,7 +189,7 @@ termToOmegaDefs expr env = case expr of
                               <> termToOmegaDefs e1 env <> " "
                               <> termToOmegaDefs e2 env <> ")"
                   
-            T_fst e1 ->  "(fst"
+            T_fst e1 ->  "(fst "
                       <> (case typeInfer env e1 of 
                           Just (Pair t1 t2) -> " [" <> (makeTypesOmegaDefs $ Just t1) <> "][" <> (makeTypesOmegaDefs $ Just t2) <> "] "
                           _ -> "Erro de Tipo [PARES]"
@@ -267,8 +235,8 @@ termToOmegaDefs expr env = case expr of
 
             _ -> "INCOMPLETO"
 
-makeDef :: String -> String
-makeDef str = case str of 
+makeDefOmega :: String -> String
+makeDefOmega str = case str of 
     "true"  -> "  true    = \\\\C:*. \\a: C. \\b: C. a;"
     "false" -> "  false   = \\\\C:*. \\a: C. \\b: C. b;"
     "if"    -> "  if      = \\\\D:*. \\c: Bool. \\a: D. \\b: D. c [D] a b;"
@@ -288,49 +256,49 @@ makeDef str = case str of
     _ -> "?"
 
 
-defs :: String 
-defs = "typedef\n"
-    <>   "  Bool          = forall C:*, C -> C -> C;\n"
-    <>   "  Nat           = forall C:*, (C -> C) -> C -> C;\n"
-    <>   "  And           = \\A:*, \\B:*, forall C:*, (A -> B -> C) -> C;\n"
-    <>   "  Or            = \\A:*, \\B:*, forall C:*, (A -> C) -> (B -> C) -> C;\n"
-    <> "end\n"
-
-    <> "let\n"
-    <>   "  true          = \\\\C:*. \\a: C. \\b: C. a;\n"
-    <>   "  false         = \\\\C:*. \\a: C. \\b: C. b;\n"
-    <>   "  if            = \\\\D:*. \\c: Bool. \\a: D. \\b: D. c [D] a b;\n"
-    <>   "  and           = \\a: Bool. \\b: Bool. if [Bool] a b false;\n"
-    <>   "  or            = \\a: Bool. \\b: Bool. if [Bool] a true b;\n"
-    <>   "  not           = \\b: Bool. if [Bool] b false true;\n\n"
-
-    <>   "  pair          = \\\\A:*. \\\\B:*. \\a: A. \\b: B. \\\\C:*. \\f: A->B->C. f a b;\n"
-    <>   "  fst           = \\\\A:*. \\\\B:*. \\p: And A B. p [A] (\\a: A.\\b: B. a) ;\n"
-    <>   "  snd           = \\\\A:*. \\\\B:*. \\p: And A B. p [B] (\\a: A.\\b: B. b) ;\n\n"
-
-    -- <>   "  left          = \\\\A:*. \\\\B:*. \\a: A. \\\\C:*. \\f: A->C. \g: B->C. f a;\n"
-    -- <>   "  right         = \\\\A:*. \\\\B:*. \\b: B. \\\\C:*. \\f: A->C. \g: B->C. g b;\n"
-    -- <>   "  case          = \\\\A:*. \\\\B:*. \\\\D:*. \\u: Either A B. \\f: A->D. \g: B->D. u [D] f g;\n\n"
-
-    <>   "  succ          = \\n: Nat. \\\\C:*. \\f: C -> C. \\x :C. f (n [C] f x);\n "
-    <>   "  add           = \\n: Nat. \\m: Nat. n [Nat] succ m;\n"
-    <>   "  double        = \\n: Nat. n [Nat] succ n;\n"
-    <>   "  mult          = \\n: Nat. \\m: Nat. m [Nat] (\\p: Nat. add n p) 0;\n\n"
-
-    <>   "  shiftInc      = \\p: Product Nat Nat. (pair [Nat] [Nat] (snd [Nat] [Nat] p) (succ (snd [Nat] [Nat] p)));\n"
-    <>   "  pred          = \\n: Nat. fst [Nat] [Nat] (n [And Nat Nat] shiftInc (pair [Nat] [Nat] 0 0));\n"
-    <>   "  sub           = \\n: Nat. \\m: Nat. m [Nat] pred n;\n"
-    <>   "  isZero        = \\n:Nat. n [Bool] (\\b: Bool. false) true;\n"
-
-    <>   "  eq            = \\n:Nat. \\m:Nat. and (isZero (sub n m)) (isZero (sub m n));\n"
-    -- <>   "  gt            = \\n:Nat. \\m:Nat. (isZero (sub n m)) ;\n"
-    
-    <> "in\n\n"
+-- defs :: String 
+-- defs = "typedef\n"
+--     <>   "  Bool          = forall C:*, C -> C -> C;\n"
+--     <>   "  Nat           = forall C:*, (C -> C) -> C -> C;\n"
+--     <>   "  And           = \\A:*, \\B:*, forall C:*, (A -> B -> C) -> C;\n"
+--     <>   "  Or            = \\A:*, \\B:*, forall C:*, (A -> C) -> (B -> C) -> C;\n"
+--     <> "end\n"
+-- 
+--     <> "let\n"
+--     <>   "  true          = \\\\C:*. \\a: C. \\b: C. a;\n"
+--     <>   "  false         = \\\\C:*. \\a: C. \\b: C. b;\n"
+--     <>   "  if            = \\\\D:*. \\c: Bool. \\a: D. \\b: D. c [D] a b;\n"
+--     <>   "  and           = \\a: Bool. \\b: Bool. if [Bool] a b false;\n"
+--     <>   "  or            = \\a: Bool. \\b: Bool. if [Bool] a true b;\n"
+--     <>   "  not           = \\b: Bool. if [Bool] b false true;\n\n"
+-- 
+--     <>   "  pair          = \\\\A:*. \\\\B:*. \\a: A. \\b: B. \\\\C:*. \\f: A->B->C. f a b;\n"
+--     <>   "  fst           = \\\\A:*. \\\\B:*. \\p: And A B. p [A] (\\a: A.\\b: B. a) ;\n"
+--     <>   "  snd           = \\\\A:*. \\\\B:*. \\p: And A B. p [B] (\\a: A.\\b: B. b) ;\n\n"
+-- 
+--     -- <>   "  left          = \\\\A:*. \\\\B:*. \\a: A. \\\\C:*. \\f: A->C. \g: B->C. f a;\n"
+--     -- <>   "  right         = \\\\A:*. \\\\B:*. \\b: B. \\\\C:*. \\f: A->C. \g: B->C. g b;\n"
+--     -- <>   "  case          = \\\\A:*. \\\\B:*. \\\\D:*. \\u: Either A B. \\f: A->D. \g: B->D. u [D] f g;\n\n"
+-- 
+--     <>   "  succ          = \\n: Nat. \\\\C:*. \\f: C -> C. \\x :C. f (n [C] f x);\n "
+--     <>   "  add           = \\n: Nat. \\m: Nat. n [Nat] succ m;\n"
+--     <>   "  double        = \\n: Nat. n [Nat] succ n;\n"
+--     <>   "  mult          = \\n: Nat. \\m: Nat. m [Nat] (\\p: Nat. add n p) 0;\n\n"
+-- 
+--     <>   "  shiftInc      = \\p: Product Nat Nat. (pair [Nat] [Nat] (snd [Nat] [Nat] p) (succ (snd [Nat] [Nat] p)));\n"
+--     <>   "  pred          = \\n: Nat. fst [Nat] [Nat] (n [And Nat Nat] shiftInc (pair [Nat] [Nat] 0 0));\n"
+--     <>   "  sub           = \\n: Nat. \\m: Nat. m [Nat] pred n;\n"
+--     <>   "  isZero        = \\n:Nat. n [Bool] (\\b: Bool. false) true;\n"
+-- 
+--     <>   "  eq            = \\n:Nat. \\m:Nat. and (isZero (sub n m)) (isZero (sub m n));\n"
+--     -- <>   "  gt            = \\n:Nat. \\m:Nat. (isZero (sub n m)) ;\n"
+--     
+--     <> "in\n\n"
 
 
 makeDefsUsed :: (List String) -> String 
-makeDefsUsed Nil = "\nin\n\n"
-makeDefsUsed (str : tail) = makeDef str <> "\n" <> makeDefsUsed tail
+makeDefsUsed Nil = "\n"
+makeDefsUsed (str : tail) = makeDefOmega str <> "\n" <> makeDefsUsed tail
 
 makeDefsBlock :: (List String) -> String 
 makeDefsBlock l =  "typedef\n"
@@ -339,9 +307,11 @@ makeDefsBlock l =  "typedef\n"
     <>   "  And           = \\A:*, \\B:*, forall C:*, (A -> B -> C) -> C;\n"
     <>   "  Or            = \\A:*, \\B:*, forall C:*, (A -> C) -> (B -> C) -> C;\n"
     <> "end\n"
-
     <> "let\n"
+
     <> makeDefsUsed l 
+
+    <> "in\n\n"
 
 
 makeLOmega :: Term → String
@@ -350,13 +320,13 @@ makeLOmega expr = case typeInfer emptyEnv expr of
                     Nothing -> "Erro de Tipo"
 
 
+-- makeLOmegaDefs :: Term → String
+-- makeLOmegaDefs expr = case typeInfer emptyEnv expr of 
+--                     Just _ -> defs <> termToOmegaDefs expr emptyEnv
+--                     Nothing -> "Erro de Tipo"
+
 makeLOmegaDefs :: Term → String
 makeLOmegaDefs expr = case typeInfer emptyEnv expr of 
-                    Just _ -> defs <> termToOmegaDefs expr emptyEnv
-                    Nothing -> "Erro de Tipo"
-
-makeLOmegaDefsUsed :: Term → String
-makeLOmegaDefsUsed expr = case typeInfer emptyEnv expr of 
                     Just _ -> makeDefsBlock (listTermsUsed expr Nil) <> termToOmegaDefs expr emptyEnv
                     Nothing -> "Erro de Tipo"
 

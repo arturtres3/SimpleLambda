@@ -14,31 +14,34 @@
     <h1>Teste STLC</h1>
 
     <p>
-      <a href="https://www.inf.ufrgs.br/~rma/simuladores/lambdaTyped.html">https://www.inf.ufrgs.br/~rma/simuladores/lambdaTyped.html</a>
+      <!-- <a href="https://www.inf.ufrgs.br/~rma/simuladores/lambdaTyped.html">https://www.inf.ufrgs.br/~rma/simuladores/lambdaTyped.html</a> -->
     </p>
 
     <form class="targetSelect">
       
       <input type="radio" id="STLC" name="language" value="0" >
-      <label for="STLC">STLC</label>
-        
-      <input type="radio" id="STLCext" name="language" value="1" checked>
-      <label for="STLCext">STLC ext</label>
+      <label for="STLC" >STLC</label>
 
-      <input type="radio" id="Lambda2" name="language" value="2" >
+      <input type="radio" id="Lambda2" name="language" value="1" >
       <label for="Lambda2">Lambda 2</label>
 
-      <input type="radio" id="LambdaOmega" name="language" value="3">
+      <input type="radio" id="LambdaOmega" name="language" value="2">
       <label for="LambdaOmega">Lambda Omega</label>
 
-      <input type="radio" id="LambdaC" name="language" value="4">
+      <input type="radio" id="LambdaC" name="language" value="3">
       <label for="LambdaC">Lambda C</label>
+        
+    </form>
 
-      <input type="radio" id="LambdaOmegaAllDefs" name="language" value="5">
-      <label for="LambdaOmegaAllDefs">Lambda Omega todas definições</label>
+    <form class="options">
+      
+      <input type="checkbox" id="Defs" name="language" value="0" >
+      <label for="Defs">Definições</label>
+        
+      <br>
 
-      <input type="radio" id="LambdaOmegaDefs" name="language" value="6">
-      <label for="LambdaOmegaDefs">Lambda Omega definições</label>
+      <input type="checkbox" id="ExtSTLC" name="language" value="1" >
+      <label id="ExtLabel" for="ExtSTLC">Tipos de alto nível (tenta simular polimorfismo sobre os booleanos e pares na compilação)</label>
         
     </form>
 
@@ -47,7 +50,7 @@
       <div id="leftSide" class="halves">
         <label for="textIn" >In:</label> <br>
         <textarea id="textIn" class="textBox" rows="10" cols="100" spellcheck="false">
-let a:Nat = 6 in 
+let a:Nat = 3 in 
 let b:Nat = 2 in 
     
 let double:Nat->Nat = func (n:Nat) = n*2 in 
