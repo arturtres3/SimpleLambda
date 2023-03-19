@@ -2,10 +2,8 @@ import * as Data_Int from "../Data.Int/index.js";
 import * as Data_List_Types from "../Data.List.Types/index.js";
 import * as Data_Maybe from "../Data.Maybe/index.js";
 import * as Structures from "../Structures/index.js";
+import * as TermLibrary from "../TermLibrary/index.js";
 import * as TypeSystem from "../TypeSystem/index.js";
-var shiftIncTerm = /* #__PURE__ */ (function () {
-    return new Structures.T_func("p", new Structures.Pair(Structures.Nat.value, Structures.Nat.value), new Structures.T_pair(new Structures.T_snd(new Structures.T_var("p")), new Structures.T_binop(Structures.Add.value, new Structures.T_snd(new Structures.T_var("p")), new Structures.T_num(1))));
-})();
 var makeTypesL2Defs = function (t) {
     if (t instanceof Data_Maybe.Just && t.value0 instanceof Structures.Bool) {
         return "Bool";
@@ -22,7 +20,7 @@ var makeTypesL2Defs = function (t) {
     if (t instanceof Data_Maybe.Nothing) {
         return "ERRO DE TIPO";
     };
-    throw new Error("Failed pattern match at CompileLambda2 (line 35, column 21 - line 45, column 42): " + [ t.constructor.name ]);
+    throw new Error("Failed pattern match at CompileLambda2 (line 27, column 21 - line 37, column 42): " + [ t.constructor.name ]);
 };
 var termToL2Defs = function (expr) {
     return function (env) {
@@ -89,6 +87,21 @@ var termToL2Defs = function (expr) {
         if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Sub) {
             return "(sub " + (termToL2Defs(expr.value1)(env) + (" " + (termToL2Defs(expr.value2)(env) + ")")));
         };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Eq) {
+            return "(eq " + (termToL2Defs(expr.value1)(env) + (" " + (termToL2Defs(expr.value2)(env) + ")")));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Ne) {
+            return "(ne " + (termToL2Defs(expr.value1)(env) + (" " + (termToL2Defs(expr.value2)(env) + ")")));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Gt) {
+            return "(gt " + (termToL2Defs(expr.value1)(env) + (" " + (termToL2Defs(expr.value2)(env) + ")")));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Lt) {
+            return "(lt " + (termToL2Defs(expr.value1)(env) + (" " + (termToL2Defs(expr.value2)(env) + ")")));
+        };
+        if (expr instanceof Structures.T_natRec) {
+            return "(natRec [" + (makeTypesL2Defs(TypeSystem.typeInfer(env)(expr.value2)) + ("] " + (termToL2Defs(expr.value0)(env) + (" " + (termToL2Defs(expr.value1)(env) + (" " + (termToL2Defs(expr.value2)(env) + ")")))))));
+        };
         return "INCOMPLETO";
     };
 };
@@ -108,13 +121,7 @@ var makeTypesL2 = function (t) {
     if (t instanceof Data_Maybe.Nothing) {
         return "ERRO DE TIPO";
     };
-    throw new Error("Failed pattern match at CompileLambda2 (line 22, column 17 - line 32, column 42): " + [ t.constructor.name ]);
-};
-var makeNatural = function (v) {
-    if (v === 0) {
-        return "x";
-    };
-    return "(f " + (makeNatural(v - 1 | 0) + ")");
+    throw new Error("Failed pattern match at CompileLambda2 (line 14, column 17 - line 24, column 42): " + [ t.constructor.name ]);
 };
 var termToL2 = function (expr) {
     return function (env) {
@@ -128,10 +135,16 @@ var termToL2 = function (expr) {
             return "x_" + expr.value0;
         };
         if (expr instanceof Structures.T_num) {
-            return "(\\\\C.\\f:C->C.\\x:C." + (makeNatural(expr.value0) + ")");
+            return "(\\\\C.\\f:C->C.\\x:C." + (Structures.makeNatural(expr.value0) + ")");
         };
         if (expr instanceof Structures.T_func) {
             return "(\\x_" + (expr.value0 + (": " + (makeTypesL2(new Data_Maybe.Just(expr.value1)) + (". " + (termToL2(expr.value2)(TypeSystem.update(env)(expr.value0)(expr.value1)) + ")")))));
+        };
+        if (expr instanceof Structures.T_func_system) {
+            return "(\\" + (expr.value0 + (": " + (makeTypesL2(new Data_Maybe.Just(expr.value1)) + (". " + (termToL2(expr.value2)(TypeSystem.update(env)(expr.value0)(expr.value1)) + ")")))));
+        };
+        if (expr instanceof Structures.T_var_system) {
+            return expr.value0;
         };
         if (expr instanceof Structures.T_app) {
             return "(" + (termToL2(expr.value0)(env) + (" " + (termToL2(expr.value1)(env) + ")")));
@@ -179,7 +192,22 @@ var termToL2 = function (expr) {
             return "((\\c:(forall C,C->C->C).\\a:(forall C,C->C->C).\\b:(forall C,C->C->C). (c[(forall C,C->C->C)]) a b)" + (termToL2(expr.value1)(env) + (" " + ("(\\\\C.\\a:C.\\b:C.b) " + "(\\\\C.\\a:C.\\b:C.a))")));
         };
         if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Sub) {
-            return "((\\n: " + (makeTypesL2(new Data_Maybe.Just(Structures.Nat.value)) + (". \\m: " + (makeTypesL2(new Data_Maybe.Just(Structures.Nat.value)) + (". " + ("m [" + (makeTypesL2(new Data_Maybe.Just(Structures.Nat.value)) + ("] " + ("(\\n: " + (makeTypesL2(new Data_Maybe.Just(Structures.Nat.value)) + (". " + ("(\\\\A. \\\\B. \\p: (forall C, (A -> B -> C) -> C). p [A] (\\a: A.\\b: B. a))" + ("[" + (makeTypesL2(new Data_Maybe.Just(Structures.Nat.value)) + ("][" + (makeTypesL2(new Data_Maybe.Just(Structures.Nat.value)) + ("]" + ("( n [" + (makeTypesL2(new Data_Maybe.Just(new Structures.Pair(Structures.Nat.value, Structures.Nat.value))) + ("]" + (termToL2(shiftIncTerm)(env) + (termToL2(new Structures.T_pair(new Structures.T_num(0), new Structures.T_num(0)))(env) + ("))" + (" n)" + (termToL2(expr.value1)(env) + (" " + (termToL2(expr.value2)(env) + ")"))))))))))))))))))))))))));
+            return "(" + (termToL2(TermLibrary.subTerm)(env) + (" " + (termToL2(expr.value1)(env) + (" " + (termToL2(expr.value2)(env) + ")")))));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Eq) {
+            return "(" + (termToL2(TermLibrary.eqTerm)(env) + (" " + (termToL2(expr.value1)(env) + (" " + (termToL2(expr.value2)(env) + ")")))));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Ne) {
+            return "(" + (termToL2(TermLibrary.neTerm)(env) + (" " + (termToL2(expr.value1)(env) + (" " + (termToL2(expr.value2)(env) + ")")))));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Gt) {
+            return "(" + (termToL2(TermLibrary.gtTerm)(env) + (" " + (termToL2(expr.value1)(env) + (" " + (termToL2(expr.value2)(env) + ")")))));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Lt) {
+            return "(" + (termToL2(TermLibrary.ltTerm)(env) + (" " + (termToL2(expr.value1)(env) + (" " + (termToL2(expr.value2)(env) + ")")))));
+        };
+        if (expr instanceof Structures.T_natRec) {
+            return "(" + (termToL2(expr.value0)(env) + (" [" + (makeTypesL2(TypeSystem.typeInfer(env)(expr.value2)) + ("] " + (termToL2(expr.value1)(env) + (" " + (termToL2(expr.value2)(env) + ")")))))));
         };
         return "INCOMPLETO";
     };
@@ -192,7 +220,7 @@ var makeL2 = function (expr) {
     if (v instanceof Data_Maybe.Nothing) {
         return "Erro de Tipo";
     };
-    throw new Error("Failed pattern match at CompileLambda2 (line 251, column 15 - line 253, column 46): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at CompileLambda2 (line 303, column 15 - line 305, column 46): " + [ v.constructor.name ]);
 };
 var makeDefL2 = function (str) {
     if (str === "true") {
@@ -234,6 +262,24 @@ var makeDefL2 = function (str) {
     if (str === "sub") {
         return "  sub     = \\n: Nat. \\m:Nat. m [Nat] (\\n: Nat. fst [Nat] [Nat] (n [(forall C, (Nat -> Nat -> C) -> C)] (\\p: (forall C, (Nat -> Nat -> C) -> C). (pair [Nat] [Nat] (snd [Nat] [Nat] p) (succ (snd [Nat] [Nat] p)))) (pair [Nat] [Nat] 0 0))) n;";
     };
+    if (str === "isZero") {
+        return "  isZero  = \\n:Nat. n [Bool] (\\b: Bool. (\\\\C. \\a: C. \\b: C. b)) (\\\\C. \\a: C. \\b: C. a);";
+    };
+    if (str === "eq") {
+        return "  eq     = \\n:Nat. \\m:Nat. and (isZero (sub n m)) (isZero (sub m n));";
+    };
+    if (str === "ne") {
+        return "  ne     = \\n:Nat. \\m:Nat. not (and (isZero (sub n m)) (isZero (sub m n)));";
+    };
+    if (str === "gt") {
+        return "  gt     = \\n:Nat. \\m:Nat. not (isZero (sub n m)) ;";
+    };
+    if (str === "lt") {
+        return "  lt     = \\n:Nat. \\m:Nat. not (isZero (sub m n)) ;";
+    };
+    if (str === "natRec") {
+        return "  natRec  = \\\\C. \\n:Nat. \\step: C -> C. \\init:C. n [C] step init;";
+    };
     return "?";
 };
 var makeDefsUsed = function (v) {
@@ -243,7 +289,7 @@ var makeDefsUsed = function (v) {
     if (v instanceof Data_List_Types.Cons) {
         return makeDefL2(v.value0) + ("\x0a" + makeDefsUsed(v.value1));
     };
-    throw new Error("Failed pattern match at CompileLambda2 (line 233, column 1 - line 233, column 40): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at CompileLambda2 (line 285, column 1 - line 285, column 40): " + [ v.constructor.name ]);
 };
 var makeDefsBlock = function (l) {
     return "typedef\x0a" + ("  Bool          = forall C, C -> C -> C;\x0a" + ("  Nat           = forall C, (C -> C) -> C -> C;\x0a" + ("end\x0a" + ("let\x0a" + (makeDefsUsed(l) + "in\x0a\x0a")))));
@@ -256,11 +302,9 @@ var makeL2Defs = function (expr) {
     if (v instanceof Data_Maybe.Nothing) {
         return "Erro de Tipo";
     };
-    throw new Error("Failed pattern match at CompileLambda2 (line 256, column 19 - line 258, column 46): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at CompileLambda2 (line 308, column 19 - line 310, column 46): " + [ v.constructor.name ]);
 };
 export {
-    shiftIncTerm,
-    makeNatural,
     makeTypesL2,
     makeTypesL2Defs,
     termToL2,

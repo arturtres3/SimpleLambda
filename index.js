@@ -19,8 +19,14 @@ const stlcTargetSelect = document.getElementById("STLC")
 const stlcExt = document.getElementById("ExtSTLC")
 const extLabel = document.getElementById("ExtLabel")
 const defsSwitch = document.getElementById("Defs")
+const openSimBtn = document.getElementById("open")
 
 var changeEvent = new Event('change');
+
+function goToLink(url) {
+    var win = window.open(url, '_blank');
+    win.focus();
+  }
 
 targetSelect.addEventListener('change', function() {
     if (stlcTargetSelect.checked) {
@@ -81,6 +87,33 @@ compileButton.addEventListener('click', () => {
                     break;
 
         default : textOut.value = "incompleto"
+
+    }
+})
+
+
+openSimBtn.addEventListener('click', () => {
+
+    textOut.select()
+    // navigator.clipboard.writeText(textOut.value);
+    document.execCommand('copy')
+
+    switch (document.querySelector('input[name="language"]:checked').value){
+
+        // STLC
+        case "0": goToLink("https://www.inf.ufrgs.br/~rma/simuladores/lambdaTyped.html")
+                    break;
+        // Lambda 2
+        case "1": goToLink("https://www.inf.ufrgs.br/~rma/simuladores/lambda2.html")
+                    break;
+        // Lambda Omega
+        case "2": goToLink("https://www.inf.ufrgs.br/~rma/simuladores/lambdaOmega.html")
+                    break;
+        // Lambda C
+        case "3": goToLink("https://www.inf.ufrgs.br/~rma/simuladores/lambdac.html")
+                    break;
+
+        default: break;
 
     }
 })

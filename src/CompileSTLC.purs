@@ -2,15 +2,12 @@ module CompileSTLC where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
-import Data.List (List(..), (:))
 import Data.Int (decimal, toStringAs)
-import Structures (BinopCode(..), Term(..), TermType(..), UnopCode(..), listTermsUsed)
+import Data.List (List(..), (:))
+import Data.Maybe (Maybe(..))
+import Structures (BinopCode(..), Term(..), TermType(..), UnopCode(..), listTermsUsed, makeNatural)
 import TypeSystem (Env, emptyEnv, typeInfer, update)
 
-makeNatural:: Int -> String
-makeNatural 0 = "x"
-makeNatural n = "(f " <> (makeNatural (n-1)) <> ")"
 
 typesSTLC :: Maybe TermType -> String
 typesSTLC t = case t of
@@ -173,6 +170,11 @@ termToSTLC expr t env = case expr of
             T_binop Mult e1 e2 -> "((\\n1:(A->A)->A->A.\\n2:(A->A)->A->A.\\f:A->A.\\x:A. n1 (n2 f) x)"
                                  <> termToSTLC e1 t env <> " "
                                  <> termToSTLC e2 t env <> ")"
+
+            T_natRec e1 e2 e3 -> "(" <> termToSTLCSimple e1 env <> " "
+                                 <> termToSTLCSimple e2 env <> " "
+                                 <> termToSTLCSimple e3 env <> ")"
+                                 
             _ -> "incompleto"
 
 lastType :: Maybe TermType -> Maybe TermType
@@ -237,7 +239,7 @@ termToSTLCSimple expr env = case expr of
             T_func id t_var e1 ->   "(\\x_" <> id <> ": " <> typesSTLC (Just t_var) <> ". " 
                                     <> termToSTLCSimple e1 (update env id t_var) <> ")"
 
-            T_num n -> toStringAs decimal n 
+            T_num n -> "(\\f:A->A.\\x:A." <> (makeNatural n) <> ")"
 
             T_binop Add e1 e2 -> "((\\n1:(A->A)->A->A.\\n2:(A->A)->A->A.\\f:A->A. \\x:A. n1 f (n2 f x))"
                                  <> termToSTLCSimple e1 env <> " "
@@ -256,6 +258,10 @@ termToSTLCSimple expr env = case expr of
 
             T_unop Not e1 -> "((\\bin: (A->A->A). \\a: A. \\b: A. bin b a) " 
                                  <> termToSTLCSimple e1 env <> ")"
+
+            T_natRec e1 e2 e3 -> "(" <> termToSTLCSimple e1 env <> " "
+                                 <> termToSTLCSimple e2 env <> " "
+                                 <> termToSTLCSimple e3 env <> ")"
 
             _ -> "incompleto"
 
@@ -329,6 +335,11 @@ termToSTLCDefs expr env = case expr of
 
             T_unop Not e1 -> "(not " 
                                  <> termToSTLCDefs e1 env <> ")"
+                        
+            T_natRec e1 e2 e3 -> "(natRec "
+                                <> termToSTLCDefs e1 env <> " "
+                                <> termToSTLCDefs e2 env <> " "
+                                <> termToSTLCDefs e3 env <> ")"
 
             _ -> "incompleto"
 
@@ -347,6 +358,8 @@ makeDefSTLC str = case str of
     "and"   -> "  and     = \\bin1:(A->A->A). \\bin2:(A->A->A). \\a:A. \\b:A. bin1 (bin2 a b) b;"
     "or"    -> "  or      = \\bin1:(A->A->A). \\bin2:(A->A->A). \\a:A. \\b:A. bin1 a (bin2 a b);"
     "not"   -> "  not     = \\bin :(A->A->A). \\a:A. \\b:A. bin b a;"
+
+    "natRec"-> "  natRec  = \\n:Nat. \\step: A -> A. \\init:A. n step init;"
 
     --"succ"  -> "  succ    = "
     --"sub"   -> "  sub     = "
@@ -381,8 +394,10 @@ canMakeSTLCSimple expr = case expr of
             T_false -> true
             T_num _ -> true
             T_var _ -> true
+            T_var_system _ -> true
 
             T_if e1 e2 e3 -> validIfSelectorsSimple e1 && canMakeSTLCSimple e2 && canMakeSTLCSimple e3
+            T_natRec e1 e2 e3 -> canMakeSTLCSimple e1 && canMakeSTLCSimple e2 && canMakeSTLCSimple e3
 
             T_fst e1 -> canMakeSTLCSimple e1
             T_snd e1 -> canMakeSTLCSimple e1
@@ -398,6 +413,7 @@ canMakeSTLCSimple expr = case expr of
             T_binop _ e1 e2 -> canMakeSTLCSimple e1 && canMakeSTLCSimple e2
             T_let _ _ e1 e2 -> canMakeSTLCSimple e1 && canMakeSTLCSimple e2
             T_func _ _ e1 -> canMakeSTLCSimple e1
+            T_func_system _ _ e1 -> canMakeSTLCSimple e1
 
 -- unica restricao de 
 validIfSelector :: Term -> Boolean
@@ -406,6 +422,7 @@ validIfSelector expr = case expr of
             T_false -> true
             T_num _ -> true
             T_var _ -> false
+            T_var_system _ -> false
 
             T_if e1 e2 e3 -> validIfSelector e1 && validIfSelector e2 && validIfSelector e3
 
@@ -423,6 +440,9 @@ validIfSelector expr = case expr of
             T_binop _ e1 e2 -> validIfSelector e1 && validIfSelector e2
             T_let _ _ e1 e2 -> validIfSelector e1 && validIfSelector e2
             T_func _ _ e1 -> validIfSelector e1
+            T_func_system _ _ e1 -> validIfSelector e1
+
+            T_natRec e1 e2 e3 -> validIfSelector e1 && validIfSelector e2 && validIfSelector e3
 
 canMakeSTLC :: Term -> Boolean
 canMakeSTLC expr = case expr of 
@@ -430,8 +450,10 @@ canMakeSTLC expr = case expr of
             T_false -> true
             T_num _ -> true
             T_var _ -> true
+            T_var_system _ -> true
 
             T_if e1 e2 e3 -> validIfSelector e1 && canMakeSTLC e2 && canMakeSTLC e3
+            T_natRec e1 e2 e3 -> canMakeSTLC e1 && canMakeSTLC e2 && canMakeSTLC e3
 
             T_fst e1 -> canMakeSTLC e1
             T_snd e1 -> canMakeSTLC e1
@@ -447,6 +469,7 @@ canMakeSTLC expr = case expr of
             T_binop _ e1 e2 -> canMakeSTLC e1 && canMakeSTLC e2
             T_let _ _ e1 e2 -> canMakeSTLC e1 && canMakeSTLC e2
             T_func _ _ e1 -> canMakeSTLC e1
+            T_func_system _ _ e1 -> canMakeSTLC e1
 
 
 makeSTLC :: Term -> String 

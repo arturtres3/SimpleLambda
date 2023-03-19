@@ -99,10 +99,10 @@ body {
     padding: 6px;
 }
 
-.btns #open{
+/* .btns #open{
     opacity: 0.6;
     cursor:default;
-}
+} */
 
 .notes {
     border: 1px solid gray;

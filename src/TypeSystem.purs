@@ -5,7 +5,7 @@ import Prelude
 import Data.List (List(..), (:))
 import Data.Maybe (Maybe(..))
 import Data.Tuple (Tuple(..))
-import Structures (BinopCode(..), UnopCode(..), Ident, Term(..), TermType(..))
+import Structures (BinopCode(..), Ident, Term(..), TermType(..), UnopCode(..))
  
 type Env = List (Tuple Ident TermType)
 
@@ -47,6 +47,7 @@ typeInfer env expr = case expr of
     T_num _ -> Just Nat
 
     T_var ident -> lookup env ident 
+    T_var_system ident -> lookup env ident 
 
     T_fst (T_pair e1 _) -> typeInfer env e1
     T_fst e1 -> (case typeInfer env e1 of
@@ -77,6 +78,10 @@ typeInfer env expr = case expr of
                         Just t1 -> Just (Func t t1)
                         _ -> Nothing)
 
+    (T_func_system id t e1) -> (case typeInfer (update env id t) e1 of
+                        Just t1 -> Just (Func t t1)
+                        _ -> Nothing)
+
     (T_app e1 e2) -> (case typeInfer env e1 of
                         Just (Func t1 t2) -> if (typeInfer env e2) == Just t1 
                                              then Just t2
@@ -97,6 +102,14 @@ typeInfer env expr = case expr of
                             case opcode of 
                             Not -> if t1 == Just Bool then Just Bool else Nothing  
                             Negate -> if t1 == Just Nat then Just Nat else Nothing  
+
+    (T_natRec e1 e2 e3) ->  if (typeInfer env e1) == Just Nat
+                            then (case typeInfer env e3 of
+                                    Just t_out -> if (typeInfer env e2) == Just (Func t_out t_out)
+                                                then Just t_out
+                                                else Nothing 
+                                    _ -> Nothing ) 
+                            else Nothing 
 
     -- _ -> Nothing
 

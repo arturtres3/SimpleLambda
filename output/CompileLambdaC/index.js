@@ -2,10 +2,8 @@ import * as Data_Int from "../Data.Int/index.js";
 import * as Data_List_Types from "../Data.List.Types/index.js";
 import * as Data_Maybe from "../Data.Maybe/index.js";
 import * as Structures from "../Structures/index.js";
+import * as TermLibrary from "../TermLibrary/index.js";
 import * as TypeSystem from "../TypeSystem/index.js";
-var shiftIncTerm = /* #__PURE__ */ (function () {
-    return new Structures.T_func("p", new Structures.Pair(Structures.Nat.value, Structures.Nat.value), new Structures.T_pair(new Structures.T_snd(new Structures.T_var("p")), new Structures.T_binop(Structures.Add.value, new Structures.T_snd(new Structures.T_var("p")), new Structures.T_num(1))));
-})();
 var makeTypesLCDefs = function (t) {
     if (t instanceof Data_Maybe.Just && t.value0 instanceof Structures.Bool) {
         return "Bool";
@@ -22,7 +20,7 @@ var makeTypesLCDefs = function (t) {
     if (t instanceof Data_Maybe.Nothing) {
         return "ERRO DE TIPO";
     };
-    throw new Error("Failed pattern match at CompileLambdaC (line 36, column 21 - line 46, column 42): " + [ t.constructor.name ]);
+    throw new Error("Failed pattern match at CompileLambdaC (line 27, column 21 - line 37, column 42): " + [ t.constructor.name ]);
 };
 var termToLCDefs = function (expr) {
     return function (env) {
@@ -89,6 +87,21 @@ var termToLCDefs = function (expr) {
         if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Sub) {
             return "(sub " + (termToLCDefs(expr.value1)(env) + (" " + (termToLCDefs(expr.value2)(env) + ")")));
         };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Eq) {
+            return "(eq " + (termToLCDefs(expr.value1)(env) + (" " + (termToLCDefs(expr.value2)(env) + ")")));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Ne) {
+            return "(ne " + (termToLCDefs(expr.value1)(env) + (" " + (termToLCDefs(expr.value2)(env) + ")")));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Gt) {
+            return "(gt " + (termToLCDefs(expr.value1)(env) + (" " + (termToLCDefs(expr.value2)(env) + ")")));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Lt) {
+            return "(lt " + (termToLCDefs(expr.value1)(env) + (" " + (termToLCDefs(expr.value2)(env) + ")")));
+        };
+        if (expr instanceof Structures.T_natRec) {
+            return "(natRec " + (makeTypesLCDefs(TypeSystem.typeInfer(env)(expr.value2)) + (" " + (termToLCDefs(expr.value0)(env) + (" " + (termToLCDefs(expr.value1)(env) + (" " + (termToLCDefs(expr.value2)(env) + ")")))))));
+        };
         return "INCOMPLETO";
     };
 };
@@ -108,13 +121,7 @@ var makeTypesLC = function (t) {
     if (t instanceof Data_Maybe.Nothing) {
         return "ERRO DE TIPO";
     };
-    throw new Error("Failed pattern match at CompileLambdaC (line 23, column 17 - line 33, column 42): " + [ t.constructor.name ]);
-};
-var makeNatural = function (v) {
-    if (v === 0) {
-        return "x";
-    };
-    return "(f " + (makeNatural(v - 1 | 0) + ")");
+    throw new Error("Failed pattern match at CompileLambdaC (line 14, column 17 - line 24, column 42): " + [ t.constructor.name ]);
 };
 var termToLC = function (expr) {
     return function (env) {
@@ -128,10 +135,16 @@ var termToLC = function (expr) {
             return "x_" + expr.value0;
         };
         if (expr instanceof Structures.T_num) {
-            return "(\\C:*.\\f:C->C.\\x:C." + (makeNatural(expr.value0) + ")");
+            return "(\\C:*.\\f:C->C.\\x:C." + (Structures.makeNatural(expr.value0) + ")");
         };
         if (expr instanceof Structures.T_func) {
             return "(\\x_" + (expr.value0 + (": " + (makeTypesLC(new Data_Maybe.Just(expr.value1)) + (". " + (termToLC(expr.value2)(TypeSystem.update(env)(expr.value0)(expr.value1)) + ")")))));
+        };
+        if (expr instanceof Structures.T_func_system) {
+            return "(\\" + (expr.value0 + (": " + (makeTypesLC(new Data_Maybe.Just(expr.value1)) + (". " + (termToLC(expr.value2)(TypeSystem.update(env)(expr.value0)(expr.value1)) + ")")))));
+        };
+        if (expr instanceof Structures.T_var_system) {
+            return expr.value0;
         };
         if (expr instanceof Structures.T_app) {
             return "(" + (termToLC(expr.value0)(env) + (" " + (termToLC(expr.value1)(env) + ")")));
@@ -179,7 +192,22 @@ var termToLC = function (expr) {
             return "((\\c:(||C:*.C->C->C).\\a:(||C:*.C->C->C).\\b:(||C:*.C->C->C). (c (||C:*.C->C->C)) a b)" + (termToLC(expr.value1)(env) + (" " + ("(\\C:*.\\a:C.\\b:C.b) " + "(\\C:*.\\a:C.\\b:C.a))")));
         };
         if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Sub) {
-            return "((\\n: " + (makeTypesLC(new Data_Maybe.Just(Structures.Nat.value)) + (". \\m: " + (makeTypesLC(new Data_Maybe.Just(Structures.Nat.value)) + (". " + ("m " + (makeTypesLC(new Data_Maybe.Just(Structures.Nat.value)) + (" " + ("(\\n: " + (makeTypesLC(new Data_Maybe.Just(Structures.Nat.value)) + (". " + ("(\\A:*. \\B:*. \\p: (\\A:*. \\B:*. ||C:*. (A -> B -> C) -> C) A B. p A (\\a: A.\\b: B. a))" + (" " + (makeTypesLC(new Data_Maybe.Just(Structures.Nat.value)) + ("][" + (makeTypesLC(new Data_Maybe.Just(Structures.Nat.value)) + (" " + ("( n " + (makeTypesLC(new Data_Maybe.Just(new Structures.Pair(Structures.Nat.value, Structures.Nat.value))) + (" " + (termToLC(shiftIncTerm)(env) + (termToLC(new Structures.T_pair(new Structures.T_num(0), new Structures.T_num(0)))(env) + ("))" + (" n)" + (termToLC(expr.value1)(env) + (" " + (termToLC(expr.value2)(env) + ")"))))))))))))))))))))))))));
+            return "(" + (termToLC(TermLibrary.subTerm)(env) + (" " + (termToLC(expr.value1)(env) + (" " + (termToLC(expr.value2)(env) + ")")))));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Eq) {
+            return "(" + (termToLC(TermLibrary.eqTerm)(env) + (" " + (termToLC(expr.value1)(env) + (" " + (termToLC(expr.value2)(env) + ")")))));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Ne) {
+            return "(" + (termToLC(TermLibrary.neTerm)(env) + (" " + (termToLC(expr.value1)(env) + (" " + (termToLC(expr.value2)(env) + ")")))));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Gt) {
+            return "(" + (termToLC(TermLibrary.gtTerm)(env) + (" " + (termToLC(expr.value1)(env) + (" " + (termToLC(expr.value2)(env) + ")")))));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Lt) {
+            return "(" + (termToLC(TermLibrary.ltTerm)(env) + (" " + (termToLC(expr.value1)(env) + (" " + (termToLC(expr.value2)(env) + ")")))));
+        };
+        if (expr instanceof Structures.T_natRec) {
+            return "(" + (termToLC(expr.value0)(env) + (" " + (makeTypesLC(TypeSystem.typeInfer(env)(expr.value2)) + (" " + (termToLC(expr.value1)(env) + (" " + (termToLC(expr.value2)(env) + ")")))))));
         };
         return "INCOMPLETO";
     };
@@ -192,7 +220,7 @@ var makeLC = function (expr) {
     if (v instanceof Data_Maybe.Nothing) {
         return "Erro de Tipo";
     };
-    throw new Error("Failed pattern match at CompileLambdaC (line 245, column 15 - line 247, column 46): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at CompileLambdaC (line 296, column 15 - line 298, column 46): " + [ v.constructor.name ]);
 };
 var makeDefLC = function (str) {
     if (str === "true") {
@@ -234,6 +262,24 @@ var makeDefLC = function (str) {
     if (str === "sub") {
         return "  sub     = \\n: Nat. \\m:Nat. m Nat (\\n: Nat. fst Nat Nat (n (And Nat Nat) (\\p: And Nat Nat. (pair Nat Nat (snd Nat Nat p) (succ (snd Nat Nat p)))) (pair Nat Nat 0 0))) n;";
     };
+    if (str === "isZero") {
+        return "  isZero  = \\n:Nat. n Bool (\\b: Bool. (\\C:*. \\a: C. \\b: C. b)) (\\C:*. \\a: C. \\b: C. a);";
+    };
+    if (str === "eq") {
+        return "  eq     = \\n:Nat. \\m:Nat. and (isZero (sub n m)) (isZero (sub m n));";
+    };
+    if (str === "ne") {
+        return "  ne     = \\n:Nat. \\m:Nat. not (and (isZero (sub n m)) (isZero (sub m n)));";
+    };
+    if (str === "gt") {
+        return "  gt     = \\n:Nat. \\m:Nat. not (isZero (sub n m)) ;";
+    };
+    if (str === "lt") {
+        return "  lt     = \\n:Nat. \\m:Nat. not (isZero (sub m n)) ;";
+    };
+    if (str === "natRec") {
+        return "  natRec  = \\C:*. \\n:Nat. \\step: C -> C. \\init:C. n C step init;";
+    };
     return "?";
 };
 var makeDefsUsed = function (v) {
@@ -243,7 +289,7 @@ var makeDefsUsed = function (v) {
     if (v instanceof Data_List_Types.Cons) {
         return makeDefLC(v.value0) + ("\x0a" + makeDefsUsed(v.value1));
     };
-    throw new Error("Failed pattern match at CompileLambdaC (line 229, column 1 - line 229, column 40): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at CompileLambdaC (line 280, column 1 - line 280, column 40): " + [ v.constructor.name ]);
 };
 var makeDefsBlock = function (l) {
     return "let\x0a" + ("  Bool          = ||C:*. C -> C -> C;\x0a" + ("  Nat           = ||C:*. (C -> C) -> C -> C;\x0a" + ("  And           = \\A:*. \\B:*. ||C:*. (A -> B -> C) -> C;\x0a" + ("  Or            = \\A:*. \\B:*. ||C:*. (A -> C) -> (B -> C) -> C;\x0a\x0a" + (makeDefsUsed(l) + "in\x0a\x0a")))));
@@ -256,11 +302,9 @@ var makeLCDefs = function (expr) {
     if (v instanceof Data_Maybe.Nothing) {
         return "Erro de Tipo";
     };
-    throw new Error("Failed pattern match at CompileLambdaC (line 250, column 19 - line 252, column 46): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at CompileLambdaC (line 301, column 19 - line 303, column 46): " + [ v.constructor.name ]);
 };
 export {
-    shiftIncTerm,
-    makeNatural,
     makeTypesLC,
     makeTypesLCDefs,
     termToLC,

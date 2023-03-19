@@ -26,10 +26,14 @@ data Term   = T_true
             | T_binop BinopCode Term Term
             | T_unop UnopCode Term
 
+            | T_natRec Term Term Term -- natRec n : shiftInc : (0,0)
             | T_var Ident
             | T_func Ident TermType Term
             | T_app Term Term
             | T_let Ident TermType Term Term
+
+            | T_func_system Ident TermType Term
+            | T_var_system Ident
 
 instance showTerm' :: Show Term where
     show = showTerm 
@@ -67,6 +71,11 @@ showTerm t = case t of
             T_binop code e1 e2 -> "(_binOp " <> show code <> " " <> showTerm e1 <> " " <> showTerm e2 <> ")"
             T_unop code e1-> "(_unOp " <> show code <> " " <> showTerm e1 <> ")"
 
+            T_natRec e1 e2 e3 -> "(_natRec " <> showTerm e1  <> " " <> showTerm e2 <> " " <> showTerm e3 <> ")"
+
+            T_func_system ident t1 e1 -> "(_func " <> ident <> " " <> showType t1 <> " " <> showTerm e1 <> ")"
+            T_var_system indent-> "(_var " <> indent <> ")" 
+
 
 
 showType ∷ TermType → String
@@ -93,12 +102,16 @@ instance showUnop :: Show UnopCode where
   show Not = "~"
 
 
+makeNatural:: Int -> String 
+makeNatural 0 = "x"
+makeNatural n = "(f " <> (makeNatural (n-1)) <> ")"
 
 listTermsUsed :: Term -> (List String) -> List String 
 listTermsUsed expr l = case expr of 
     T_true          -> union ("true":Nil) l
     T_false         -> union ("false":Nil) l
     T_if e1 e2 e3   -> union (union (union (union ("if":Nil) l) (listTermsUsed e1 l))(listTermsUsed e2 l )) (listTermsUsed e3 l)
+    T_natRec e1 e2 e3   -> union (union (union (union ("natRec":Nil) l) (listTermsUsed e1 l))(listTermsUsed e2 l )) (listTermsUsed e3 l)
 
     T_pair e1 e2    -> union (union (union ("pair":Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
     T_fst e1        -> union (union ("fst":Nil) l) (listTermsUsed e1 l)
@@ -114,10 +127,11 @@ listTermsUsed expr l = case expr of
     T_binop Or  e1 e2  -> union (union (union ("or"  :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
     T_binop Div e1 e2  -> union (union (union ("div" :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
     T_binop Mult e1 e2 -> union (union (union ("mult":Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
-    T_binop Eq  e1 e2  -> union (union (union ("eq"  :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
-    T_binop Ne  e1 e2  -> union (union (union ("ne"  :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
-    T_binop Gt  e1 e2  -> union (union (union ("gt"  :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
-    T_binop Lt  e1 e2  -> union (union (union ("lt"  :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
+
+    T_binop Eq  e1 e2  -> union (union (union ("isZero":"pair":"fst":"snd":"succ":"sub":"and":"eq"  :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
+    T_binop Ne  e1 e2  -> union (union (union ("isZero":"pair":"fst":"snd":"succ":"sub":"and":"not":"ne"  :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
+    T_binop Gt  e1 e2  -> union (union (union ("isZero":"pair":"fst":"snd":"succ":"sub":"not":"gt"  :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
+    T_binop Lt  e1 e2  -> union (union (union ("isZero":"pair":"fst":"snd":"succ":"sub":"not":"lt"  :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
 
     T_binop Sub e1 e2  -> union (union (union ("pair":"fst":"snd":"succ":"sub":Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
     _                  -> l

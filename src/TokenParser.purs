@@ -76,6 +76,17 @@ parseLet = (do
             pure (T_let (fst param) (snd param) e1 e2)
             )
 
+parseNatRec :: P Term
+parseNatRec = (do
+              reserved "natRec"
+              e1 <- expr
+              reservedOp ":"
+              e2 <- expr
+              reservedOp ":"
+              e3 <- expr
+              pure (T_natRec e1 e2 e3)
+              )
+
 parseIf :: P Term 
 parseIf = (do 
             reserved "if"
@@ -107,6 +118,7 @@ parseTerm p = parens p
             <|> parseLet
             <|> parseFst
             <|> parseSnd
+            <|> parseNatRec
             -- <|> expr ENTRA EM LOOP
 
 table :: OperatorTable Identity String Term

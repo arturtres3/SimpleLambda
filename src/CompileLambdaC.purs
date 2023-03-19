@@ -2,22 +2,13 @@ module CompileLambdaC where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
-import Data.List (List(..), (:))
 import Data.Int (decimal, toStringAs)
-import Structures (BinopCode(..), Term(..), TermType(..), UnopCode(..), listTermsUsed)
+import Data.List (List(..), (:))
+import Data.Maybe (Maybe(..))
+import Structures (BinopCode(..), Term(..), TermType(..), UnopCode(..), listTermsUsed, makeNatural)
 import TypeSystem (Env, emptyEnv, typeInfer, update)
+import TermLibrary (eqTerm, neTerm, gtTerm, ltTerm, subTerm)
 
-
-shiftIncTerm :: Term
-shiftIncTerm = (T_func "p" (Pair Nat Nat) 
-                        (T_pair (T_snd (T_var "p"))  
-                        (T_binop  Add  (T_snd (T_var "p")) (T_num 1)))
-                    ) 
-
-makeNatural:: Int -> String 
-makeNatural 0 = "x"
-makeNatural n = "(f " <> (makeNatural (n-1)) <> ")"
 
 makeTypesLC :: Maybe TermType -> String
 makeTypesLC t = case t of
@@ -55,6 +46,10 @@ termToLC expr env = case expr of
 
             T_func id t_var e1 -> "(\\x_" <> id <> ": " <> makeTypesLC (Just t_var) <> ". " 
                                   <> termToLC e1 (update env id t_var) <> ")"
+
+            T_func_system id t_var e1 -> "(\\" <> id <> ": " <> makeTypesLC (Just t_var) <> ". " 
+                                  <> termToLC e1 (update env id t_var) <> ")"
+            T_var_system id -> id
 
             T_app e1 e2 -> "(" <> termToLC e1 env <> " " <> termToLC e2 env <> ")"
 
@@ -116,21 +111,46 @@ termToLC expr env = case expr of
                                 <> "(\\C:*.\\a:C.\\b:C.b) "
                                 <> "(\\C:*.\\a:C.\\b:C.a))"
 
-            T_binop Sub e1 e2 -> "((\\n: " <> makeTypesLC (Just Nat) <> ". \\m: " <> makeTypesLC (Just Nat) <> ". "
-                                <> "m " <> makeTypesLC (Just Nat) <> " "
+--             T_binop Sub e1 e2 -> "((\\n: " <> makeTypesLC (Just Nat) <> ". \\m: " <> makeTypesLC (Just Nat) <> ". "
+--                                 <> "m " <> makeTypesLC (Just Nat) <> " "
+-- 
+--                                 -- predecessor
+--                                 <> "(\\n: " <> makeTypesLC (Just Nat) <> ". "
+--                                 <> "(\\A:*. \\B:*. \\p: (\\A:*. \\B:*. ||C:*. (A -> B -> C) -> C) A B. p A (\\a: A.\\b: B. a))" -- fst
+--                                 <> " " <> makeTypesLC (Just Nat) <> "][" <> makeTypesLC (Just Nat) <> " "
+--                                 <> "( n " <> makeTypesLC (Just (Pair Nat Nat)) <> " "
+--                                 <> termToLC shiftIncTerm env 
+--                                 <> termToLC (T_pair (T_num 0) (T_num 0)) env 
+--                                 <> "))" 
+-- 
+--                                 <> " n)"
+--                                 <> termToLC e1 env <> " "
+--                                 <> termToLC e2 env <> ")"
 
-                                -- predecessor
-                                <> "(\\n: " <> makeTypesLC (Just Nat) <> ". "
-                                <> "(\\A:*. \\B:*. \\p: (\\A:*. \\B:*. ||C:*. (A -> B -> C) -> C) A B. p A (\\a: A.\\b: B. a))" -- fst
-                                <> " " <> makeTypesLC (Just Nat) <> "][" <> makeTypesLC (Just Nat) <> " "
-                                <> "( n " <> makeTypesLC (Just (Pair Nat Nat)) <> " "
-                                <> termToLC shiftIncTerm env 
-                                <> termToLC (T_pair (T_num 0) (T_num 0)) env 
-                                <> "))" 
-
-                                <> " n)"
+            T_binop Sub e1 e2 -> "(" <> termToLC subTerm env <> " "
                                 <> termToLC e1 env <> " "
                                 <> termToLC e2 env <> ")"
+
+            T_binop Eq e1 e2 -> "(" <> termToLC eqTerm env <> " "
+                                <> termToLC e1 env <> " "
+                                <> termToLC e2 env <> ")"
+
+            T_binop Ne e1 e2 -> "(" <> termToLC neTerm env <> " "
+                                <> termToLC e1 env <> " "
+                                <> termToLC e2 env <> ")"
+
+            T_binop Gt e1 e2 -> "(" <> termToLC gtTerm env <> " "
+                                <> termToLC e1 env <> " "
+                                <> termToLC e2 env <> ")"
+
+            T_binop Lt e1 e2 -> "(" <> termToLC ltTerm env <> " "
+                                <> termToLC e1 env <> " "
+                                <> termToLC e2 env <> ")"
+
+            T_natRec e1 e2 e3 -> "(" <> termToLC e1 env
+                                <> " " <> (makeTypesLC $ typeInfer env e3) <> " "
+                                <> termToLC e2 env <> " "
+                                <> termToLC e3 env <> ")"
 
             _ -> "INCOMPLETO"
 
@@ -203,6 +223,28 @@ termToLCDefs expr env = case expr of
                                 <> termToLCDefs e1 env <> " "
                                 <> termToLCDefs e2 env <> ")"
 
+            T_binop Eq e1 e2 -> "(eq "
+                                <> termToLCDefs e1 env <> " "
+                                <> termToLCDefs e2 env <> ")"
+
+            T_binop Ne e1 e2 -> "(ne "
+                                <> termToLCDefs e1 env <> " "
+                                <> termToLCDefs e2 env <> ")"
+
+            T_binop Gt e1 e2 -> "(gt "
+                                <> termToLCDefs e1 env <> " "
+                                <> termToLCDefs e2 env <> ")"
+
+            T_binop Lt e1 e2 -> "(lt "
+                                <> termToLCDefs e1 env <> " "
+                                <> termToLCDefs e2 env <> ")"
+
+            T_natRec e1 e2 e3 -> "(natRec "
+                                <> (makeTypesLCDefs $ typeInfer env e3) <> " "
+                                <> termToLCDefs e1 env <> " "
+                                <> termToLCDefs e2 env <> " "
+                                <> termToLCDefs e3 env <> ")"
+
             _ -> "INCOMPLETO"
 
 
@@ -224,6 +266,15 @@ makeDefLC str = case str of
     "succ"  -> "  succ    = \\n: Nat. \\C:*. \\f: C -> C. \\x :C. f (n C f x);"
     "sub"   -> "  sub     = \\n: Nat. \\m:Nat. m Nat (\\n: Nat. fst Nat Nat (n (And Nat Nat) (\\p: And Nat Nat. (pair Nat Nat (snd Nat Nat p) (succ (snd Nat Nat p)))) (pair Nat Nat 0 0))) n;"
 
+    "isZero"-> "  isZero  = \\n:Nat. n Bool (\\b: Bool. (\\C:*. \\a: C. \\b: C. b)) (\\C:*. \\a: C. \\b: C. a);"
+
+    "eq"    -> "  eq     = \\n:Nat. \\m:Nat. and (isZero (sub n m)) (isZero (sub m n));"
+    "ne"    -> "  ne     = \\n:Nat. \\m:Nat. not (and (isZero (sub n m)) (isZero (sub m n)));"
+
+    "gt"    -> "  gt     = \\n:Nat. \\m:Nat. not (isZero (sub n m)) ;"
+    "lt"    -> "  lt     = \\n:Nat. \\m:Nat. not (isZero (sub m n)) ;"
+
+    "natRec"-> "  natRec  = \\C:*. \\n:Nat. \\step: C -> C. \\init:C. n C step init;"
     _ -> "?"
 
 makeDefsUsed :: (List String) -> String 

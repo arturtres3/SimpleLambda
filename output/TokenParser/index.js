@@ -88,7 +88,7 @@ var parseManyParams = /* #__PURE__ */ bind(/* #__PURE__ */ Parsing_Combinators.s
     return pure(Data_List_NonEmpty.toList(paramList));
 });
 var parseTerm = function (p) {
-    return alt(parens(p))(alt(voidLeft(reserved("true"))(Structures.T_true.value))(alt(voidLeft(reserved("false"))(Structures.T_false.value))(alt(map(Structures.T_var.create)(identifier))(alt(map(Structures.T_num.create)(integer))(alt($lazy_parseFunc(105))(alt($lazy_parseIf(106))(alt($lazy_parseLet(107))(alt($lazy_parseFst(108))($lazy_parseSnd(109))))))))));
+    return alt(parens(p))(alt(voidLeft(reserved("true"))(Structures.T_true.value))(alt(voidLeft(reserved("false"))(Structures.T_false.value))(alt(map(Structures.T_var.create)(identifier))(alt(map(Structures.T_num.create)(integer))(alt($lazy_parseFunc(116))(alt($lazy_parseIf(117))(alt($lazy_parseLet(118))(alt($lazy_parseFst(119))(alt($lazy_parseSnd(120))($lazy_parseNatRec(121)))))))))));
 };
 var $lazy_expr = /* #__PURE__ */ $runtime_lazy("expr", "TokenParser", function () {
     var allExprs = function (p) {
@@ -98,7 +98,7 @@ var $lazy_expr = /* #__PURE__ */ $runtime_lazy("expr", "TokenParser", function (
 });
 var $lazy_parseFst = /* #__PURE__ */ $runtime_lazy("parseFst", "TokenParser", function () {
     return discard(reserved("fst"))(function () {
-        return map(Structures.T_fst.create)($lazy_expr(92));
+        return map(Structures.T_fst.create)($lazy_expr(103));
     });
 });
 var $lazy_parseFunc = /* #__PURE__ */ $runtime_lazy("parseFunc", "TokenParser", function () {
@@ -114,11 +114,11 @@ var $lazy_parseFunc = /* #__PURE__ */ $runtime_lazy("parseFunc", "TokenParser", 
 });
 var $lazy_parseIf = /* #__PURE__ */ $runtime_lazy("parseIf", "TokenParser", function () {
     return discard(reserved("if"))(function () {
-        return bind($lazy_expr(82))(function (e1) {
+        return bind($lazy_expr(93))(function (e1) {
             return discard(reserved("then"))(function () {
-                return bind($lazy_expr(84))(function (e2) {
+                return bind($lazy_expr(95))(function (e2) {
                     return discard(reserved("else"))(function () {
-                        return bind($lazy_expr(86))(function (e3) {
+                        return bind($lazy_expr(97))(function (e3) {
                             return pure(new Structures.T_if(e1, e2, e3));
                         });
                     });
@@ -142,17 +142,33 @@ var $lazy_parseLet = /* #__PURE__ */ $runtime_lazy("parseLet", "TokenParser", fu
         });
     });
 });
-var $lazy_parseSnd = /* #__PURE__ */ $runtime_lazy("parseSnd", "TokenParser", function () {
-    return discard(reserved("snd"))(function () {
-        return map(Structures.T_snd.create)($lazy_expr(97));
+var $lazy_parseNatRec = /* #__PURE__ */ $runtime_lazy("parseNatRec", "TokenParser", function () {
+    return discard(reserved("natRec"))(function () {
+        return bind($lazy_expr(82))(function (e1) {
+            return discard(reservedOp(":"))(function () {
+                return bind($lazy_expr(84))(function (e2) {
+                    return discard(reservedOp(":"))(function () {
+                        return bind($lazy_expr(86))(function (e3) {
+                            return pure(new Structures.T_natRec(e1, e2, e3));
+                        });
+                    });
+                });
+            });
+        });
     });
 });
-var expr = /* #__PURE__ */ $lazy_expr(130);
-var parseFst = /* #__PURE__ */ $lazy_parseFst(89);
+var $lazy_parseSnd = /* #__PURE__ */ $runtime_lazy("parseSnd", "TokenParser", function () {
+    return discard(reserved("snd"))(function () {
+        return map(Structures.T_snd.create)($lazy_expr(108));
+    });
+});
+var expr = /* #__PURE__ */ $lazy_expr(142);
+var parseFst = /* #__PURE__ */ $lazy_parseFst(100);
 var parseFunc = /* #__PURE__ */ $lazy_parseFunc(59);
-var parseIf = /* #__PURE__ */ $lazy_parseIf(79);
+var parseIf = /* #__PURE__ */ $lazy_parseIf(90);
 var parseLet = /* #__PURE__ */ $lazy_parseLet(68);
-var parseSnd = /* #__PURE__ */ $lazy_parseSnd(94);
+var parseNatRec = /* #__PURE__ */ $lazy_parseNatRec(79);
+var parseSnd = /* #__PURE__ */ $lazy_parseSnd(105);
 
 // faz parsing do espaco em branco antes do primeiro token 
 var parseExpr = /* #__PURE__ */ discard(/* #__PURE__ */ Parsing_Combinators.optional(/* #__PURE__ */ Parsing_Combinators["try"](whiteSpace)))(function () {
@@ -166,7 +182,7 @@ var getTerm = function (inputText) {
     if (v instanceof Data_Either.Right) {
         return v.value0;
     };
-    throw new Error("Failed pattern match at TokenParser (line 160, column 21 - line 162, column 35): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at TokenParser (line 172, column 21 - line 174, column 35): " + [ v.constructor.name ]);
 };
 export {
     parens,
@@ -180,6 +196,7 @@ export {
     makeFunc,
     parseFunc,
     parseLet,
+    parseNatRec,
     parseIf,
     parseFst,
     parseSnd,

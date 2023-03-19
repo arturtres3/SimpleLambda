@@ -221,6 +221,21 @@ var T_unop = /* #__PURE__ */ (function () {
     };
     return T_unop;
 })();
+var T_natRec = /* #__PURE__ */ (function () {
+    function T_natRec(value0, value1, value2) {
+        this.value0 = value0;
+        this.value1 = value1;
+        this.value2 = value2;
+    };
+    T_natRec.create = function (value0) {
+        return function (value1) {
+            return function (value2) {
+                return new T_natRec(value0, value1, value2);
+            };
+        };
+    };
+    return T_natRec;
+})();
 var T_var = /* #__PURE__ */ (function () {
     function T_var(value0) {
         this.value0 = value0;
@@ -275,6 +290,30 @@ var T_let = /* #__PURE__ */ (function () {
     };
     return T_let;
 })();
+var T_func_system = /* #__PURE__ */ (function () {
+    function T_func_system(value0, value1, value2) {
+        this.value0 = value0;
+        this.value1 = value1;
+        this.value2 = value2;
+    };
+    T_func_system.create = function (value0) {
+        return function (value1) {
+            return function (value2) {
+                return new T_func_system(value0, value1, value2);
+            };
+        };
+    };
+    return T_func_system;
+})();
+var T_var_system = /* #__PURE__ */ (function () {
+    function T_var_system(value0) {
+        this.value0 = value0;
+    };
+    T_var_system.create = function (value0) {
+        return new T_var_system(value0);
+    };
+    return T_var_system;
+})();
 var showUnop = {
     show: function (v) {
         if (v instanceof Negate) {
@@ -283,7 +322,7 @@ var showUnop = {
         if (v instanceof Not) {
             return "~";
         };
-        throw new Error("Failed pattern match at Structures (line 91, column 1 - line 93, column 17): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at Structures (line 100, column 1 - line 102, column 17): " + [ v.constructor.name ]);
     }
 };
 var show = /* #__PURE__ */ Data_Show.show(showUnop);
@@ -300,7 +339,7 @@ var showType = function (t) {
     if (t instanceof Func) {
         return "(" + (showType(t.value0) + (" -> " + (showType(t.value1) + ")")));
     };
-    throw new Error("Failed pattern match at Structures (line 73, column 14 - line 77, column 77): " + [ t.constructor.name ]);
+    throw new Error("Failed pattern match at Structures (line 82, column 14 - line 86, column 77): " + [ t.constructor.name ]);
 };
 var showType$prime = {
     show: showType
@@ -337,7 +376,7 @@ var showBinop = {
         if (v instanceof And) {
             return " && ";
         };
-        throw new Error("Failed pattern match at Structures (line 79, column 1 - line 89, column 20): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at Structures (line 88, column 1 - line 98, column 20): " + [ v.constructor.name ]);
     }
 };
 var show1 = /* #__PURE__ */ Data_Show.show(showBinop);
@@ -381,10 +420,25 @@ var showTerm = function (t) {
     if (t instanceof T_unop) {
         return "(_unOp " + (show(t.value0) + (" " + (showTerm(t.value1) + ")")));
     };
-    throw new Error("Failed pattern match at Structures (line 48, column 14 - line 68, column 81): " + [ t.constructor.name ]);
+    if (t instanceof T_natRec) {
+        return "(_natRec " + (showTerm(t.value0) + (" " + (showTerm(t.value1) + (" " + (showTerm(t.value2) + ")")))));
+    };
+    if (t instanceof T_func_system) {
+        return "(_func " + (t.value0 + (" " + (showType(t.value1) + (" " + (showTerm(t.value2) + ")")))));
+    };
+    if (t instanceof T_var_system) {
+        return "(_var " + (t.value0 + ")");
+    };
+    throw new Error("Failed pattern match at Structures (line 52, column 14 - line 77, column 60): " + [ t.constructor.name ]);
 };
 var showTerm$prime = {
     show: showTerm
+};
+var makeNatural = function (v) {
+    if (v === 0) {
+        return "x";
+    };
+    return "(f " + (makeNatural(v - 1 | 0) + ")");
 };
 var listTermsUsed = function (expr) {
     return function (l) {
@@ -396,6 +450,9 @@ var listTermsUsed = function (expr) {
         };
         if (expr instanceof T_if) {
             return union(union(union(union(new Data_List_Types.Cons("if", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value0)(l)))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
+        };
+        if (expr instanceof T_natRec) {
+            return union(union(union(union(new Data_List_Types.Cons("natRec", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value0)(l)))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
         };
         if (expr instanceof T_pair) {
             return union(union(union(new Data_List_Types.Cons("pair", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value0)(l)))(listTermsUsed(expr.value1)(l));
@@ -434,16 +491,16 @@ var listTermsUsed = function (expr) {
             return union(union(union(new Data_List_Types.Cons("mult", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
         };
         if (expr instanceof T_binop && expr.value0 instanceof Eq) {
-            return union(union(union(new Data_List_Types.Cons("eq", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
+            return union(union(union(new Data_List_Types.Cons("isZero", new Data_List_Types.Cons("pair", new Data_List_Types.Cons("fst", new Data_List_Types.Cons("snd", new Data_List_Types.Cons("succ", new Data_List_Types.Cons("sub", new Data_List_Types.Cons("and", new Data_List_Types.Cons("eq", Data_List_Types.Nil.value)))))))))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
         };
         if (expr instanceof T_binop && expr.value0 instanceof Ne) {
-            return union(union(union(new Data_List_Types.Cons("ne", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
+            return union(union(union(new Data_List_Types.Cons("isZero", new Data_List_Types.Cons("pair", new Data_List_Types.Cons("fst", new Data_List_Types.Cons("snd", new Data_List_Types.Cons("succ", new Data_List_Types.Cons("sub", new Data_List_Types.Cons("and", new Data_List_Types.Cons("not", new Data_List_Types.Cons("ne", Data_List_Types.Nil.value))))))))))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
         };
         if (expr instanceof T_binop && expr.value0 instanceof Gt) {
-            return union(union(union(new Data_List_Types.Cons("gt", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
+            return union(union(union(new Data_List_Types.Cons("isZero", new Data_List_Types.Cons("pair", new Data_List_Types.Cons("fst", new Data_List_Types.Cons("snd", new Data_List_Types.Cons("succ", new Data_List_Types.Cons("sub", new Data_List_Types.Cons("not", new Data_List_Types.Cons("gt", Data_List_Types.Nil.value)))))))))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
         };
         if (expr instanceof T_binop && expr.value0 instanceof Lt) {
-            return union(union(union(new Data_List_Types.Cons("lt", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
+            return union(union(union(new Data_List_Types.Cons("isZero", new Data_List_Types.Cons("pair", new Data_List_Types.Cons("fst", new Data_List_Types.Cons("snd", new Data_List_Types.Cons("succ", new Data_List_Types.Cons("sub", new Data_List_Types.Cons("not", new Data_List_Types.Cons("lt", Data_List_Types.Nil.value)))))))))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
         };
         if (expr instanceof T_binop && expr.value0 instanceof Sub) {
             return union(union(union(new Data_List_Types.Cons("pair", new Data_List_Types.Cons("fst", new Data_List_Types.Cons("snd", new Data_List_Types.Cons("succ", new Data_List_Types.Cons("sub", Data_List_Types.Nil.value))))))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
@@ -553,6 +610,9 @@ var eqTerm = {
             if (x instanceof T_unop && y instanceof T_unop) {
                 return eq2(x.value0)(y.value0) && Data_Eq.eq(eqTerm)(x.value1)(y.value1);
             };
+            if (x instanceof T_natRec && y instanceof T_natRec) {
+                return Data_Eq.eq(eqTerm)(x.value0)(y.value0) && Data_Eq.eq(eqTerm)(x.value1)(y.value1) && Data_Eq.eq(eqTerm)(x.value2)(y.value2);
+            };
             if (x instanceof T_var && y instanceof T_var) {
                 return x.value0 === y.value0;
             };
@@ -564,6 +624,12 @@ var eqTerm = {
             };
             if (x instanceof T_let && y instanceof T_let) {
                 return x.value0 === y.value0 && eq3(x.value1)(y.value1) && Data_Eq.eq(eqTerm)(x.value2)(y.value2) && Data_Eq.eq(eqTerm)(x.value3)(y.value3);
+            };
+            if (x instanceof T_func_system && y instanceof T_func_system) {
+                return x.value0 === y.value0 && eq3(x.value1)(y.value1) && Data_Eq.eq(eqTerm)(x.value2)(y.value2);
+            };
+            if (x instanceof T_var_system && y instanceof T_var_system) {
+                return x.value0 === y.value0;
             };
             return false;
         };
@@ -595,12 +661,16 @@ export {
     T_snd,
     T_binop,
     T_unop,
+    T_natRec,
     T_var,
     T_func,
     T_app,
     T_let,
+    T_func_system,
+    T_var_system,
     showTerm,
     showType,
+    makeNatural,
     listTermsUsed,
     showTerm$prime,
     showType$prime,

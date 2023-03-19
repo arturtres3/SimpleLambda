@@ -2,28 +2,8 @@ import * as Data_Int from "../Data.Int/index.js";
 import * as Data_List_Types from "../Data.List.Types/index.js";
 import * as Data_Maybe from "../Data.Maybe/index.js";
 import * as Structures from "../Structures/index.js";
+import * as TermLibrary from "../TermLibrary/index.js";
 import * as TypeSystem from "../TypeSystem/index.js";
-var testTypes = function (t) {
-    if (t instanceof Data_Maybe.Just && t.value0 instanceof Structures.Bool) {
-        return "Bool";
-    };
-    if (t instanceof Data_Maybe.Just && t.value0 instanceof Structures.Nat) {
-        return "Nat";
-    };
-    if (t instanceof Data_Maybe.Just && t.value0 instanceof Structures.Pair) {
-        return "(And " + (testTypes(new Data_Maybe.Just(t.value0.value0)) + (" " + (testTypes(new Data_Maybe.Just(t.value0.value1)) + ")")));
-    };
-    if (t instanceof Data_Maybe.Nothing) {
-        return "ERRO DE TIPO";
-    };
-    return "INCOMPLETO";
-};
-
-// import Structures (Term(..), TermType(..))
-// import TypeSystem (typeInfer)
-var shiftIncTerm = /* #__PURE__ */ (function () {
-    return new Structures.T_func("p", new Structures.Pair(Structures.Nat.value, Structures.Nat.value), new Structures.T_pair(new Structures.T_snd(new Structures.T_var("p")), new Structures.T_binop(Structures.Add.value, new Structures.T_snd(new Structures.T_var("p")), new Structures.T_num(1))));
-})();
 var makeTypesOmegaDefs = function (t) {
     if (t instanceof Data_Maybe.Just && t.value0 instanceof Structures.Bool) {
         return "Bool";
@@ -40,7 +20,7 @@ var makeTypesOmegaDefs = function (t) {
     if (t instanceof Data_Maybe.Nothing) {
         return "ERRO DE TIPO";
     };
-    throw new Error("Failed pattern match at CompileOmega (line 49, column 24 - line 59, column 42): " + [ t.constructor.name ]);
+    throw new Error("Failed pattern match at CompileOmega (line 27, column 24 - line 37, column 42): " + [ t.constructor.name ]);
 };
 var termToOmegaDefs = function (expr) {
     return function (env) {
@@ -110,6 +90,18 @@ var termToOmegaDefs = function (expr) {
         if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Eq) {
             return "(eq " + (termToOmegaDefs(expr.value1)(env) + (" " + (termToOmegaDefs(expr.value2)(env) + ")")));
         };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Ne) {
+            return "(ne " + (termToOmegaDefs(expr.value1)(env) + (" " + (termToOmegaDefs(expr.value2)(env) + ")")));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Gt) {
+            return "(gt " + (termToOmegaDefs(expr.value1)(env) + (" " + (termToOmegaDefs(expr.value2)(env) + ")")));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Lt) {
+            return "(lt " + (termToOmegaDefs(expr.value1)(env) + (" " + (termToOmegaDefs(expr.value2)(env) + ")")));
+        };
+        if (expr instanceof Structures.T_natRec) {
+            return "(natRec [" + (makeTypesOmegaDefs(TypeSystem.typeInfer(env)(expr.value2)) + ("] " + (termToOmegaDefs(expr.value0)(env) + (" " + (termToOmegaDefs(expr.value1)(env) + (" " + (termToOmegaDefs(expr.value2)(env) + ")")))))));
+        };
         return "INCOMPLETO";
     };
 };
@@ -129,13 +121,7 @@ var makeTypesOmega = function (t) {
     if (t instanceof Data_Maybe.Nothing) {
         return "ERRO DE TIPO";
     };
-    throw new Error("Failed pattern match at CompileOmega (line 36, column 20 - line 46, column 42): " + [ t.constructor.name ]);
-};
-var makeNatural = function (v) {
-    if (v === 0) {
-        return "x";
-    };
-    return "(f " + (makeNatural(v - 1 | 0) + ")");
+    throw new Error("Failed pattern match at CompileOmega (line 14, column 20 - line 24, column 42): " + [ t.constructor.name ]);
 };
 var termToOmega = function (expr) {
     return function (env) {
@@ -149,10 +135,16 @@ var termToOmega = function (expr) {
             return "x_" + expr.value0;
         };
         if (expr instanceof Structures.T_num) {
-            return "(\\\\C:*.\\f:C->C.\\x:C." + (makeNatural(expr.value0) + ")");
+            return "(\\\\C:*.\\f:C->C.\\x:C." + (Structures.makeNatural(expr.value0) + ")");
         };
         if (expr instanceof Structures.T_func) {
             return "(\\x_" + (expr.value0 + (": " + (makeTypesOmega(new Data_Maybe.Just(expr.value1)) + (". " + (termToOmega(expr.value2)(TypeSystem.update(env)(expr.value0)(expr.value1)) + ")")))));
+        };
+        if (expr instanceof Structures.T_func_system) {
+            return "(\\" + (expr.value0 + (": " + (makeTypesOmega(new Data_Maybe.Just(expr.value1)) + (". " + (termToOmega(expr.value2)(TypeSystem.update(env)(expr.value0)(expr.value1)) + ")")))));
+        };
+        if (expr instanceof Structures.T_var_system) {
+            return expr.value0;
         };
         if (expr instanceof Structures.T_app) {
             return "(" + (termToOmega(expr.value0)(env) + (" " + (termToOmega(expr.value1)(env) + ")")));
@@ -200,7 +192,22 @@ var termToOmega = function (expr) {
             return "((\\c:(forall C:*,C->C->C).\\a:(forall C:*,C->C->C).\\b:(forall C:*,C->C->C). (c[(forall C:*,C->C->C)]) a b)" + (termToOmega(expr.value1)(env) + (" " + ("(\\\\C:*.\\a:C.\\b:C.b) " + "(\\\\C:*.\\a:C.\\b:C.a))")));
         };
         if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Sub) {
-            return "((\\n: " + (makeTypesOmega(new Data_Maybe.Just(Structures.Nat.value)) + (". \\m: " + (makeTypesOmega(new Data_Maybe.Just(Structures.Nat.value)) + (". " + ("m [" + (makeTypesOmega(new Data_Maybe.Just(Structures.Nat.value)) + ("] " + ("(\\n: " + (makeTypesOmega(new Data_Maybe.Just(Structures.Nat.value)) + (". " + ("(\\\\A:*. \\\\B:*. \\p: (\\A:*, \\B:*, forall C:*, (A -> B -> C) -> C) A B. p [A] (\\a: A.\\b: B. a))" + ("[" + (makeTypesOmega(new Data_Maybe.Just(Structures.Nat.value)) + ("][" + (makeTypesOmega(new Data_Maybe.Just(Structures.Nat.value)) + ("]" + ("( n [" + (makeTypesOmega(new Data_Maybe.Just(new Structures.Pair(Structures.Nat.value, Structures.Nat.value))) + ("]" + (termToOmega(shiftIncTerm)(env) + (termToOmega(new Structures.T_pair(new Structures.T_num(0), new Structures.T_num(0)))(env) + ("))" + (" n)" + (termToOmega(expr.value1)(env) + (" " + (termToOmega(expr.value2)(env) + ")"))))))))))))))))))))))))));
+            return "(" + (termToOmega(TermLibrary.subTerm)(env) + (" " + (termToOmega(expr.value1)(env) + (" " + (termToOmega(expr.value2)(env) + ")")))));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Eq) {
+            return "(" + (termToOmega(TermLibrary.eqTerm)(env) + (" " + (termToOmega(expr.value1)(env) + (" " + (termToOmega(expr.value2)(env) + ")")))));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Ne) {
+            return "(" + (termToOmega(TermLibrary.neTerm)(env) + (" " + (termToOmega(expr.value1)(env) + (" " + (termToOmega(expr.value2)(env) + ")")))));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Gt) {
+            return "(" + (termToOmega(TermLibrary.gtTerm)(env) + (" " + (termToOmega(expr.value1)(env) + (" " + (termToOmega(expr.value2)(env) + ")")))));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Lt) {
+            return "(" + (termToOmega(TermLibrary.ltTerm)(env) + (" " + (termToOmega(expr.value1)(env) + (" " + (termToOmega(expr.value2)(env) + ")")))));
+        };
+        if (expr instanceof Structures.T_natRec) {
+            return "(" + (termToOmega(expr.value0)(env) + (" [" + (makeTypesOmega(TypeSystem.typeInfer(env)(expr.value2)) + ("] " + (termToOmega(expr.value1)(env) + (" " + (termToOmega(expr.value2)(env) + ")")))))));
         };
         return "INCOMPLETO";
     };
@@ -213,7 +220,7 @@ var makeLOmega = function (expr) {
     if (v instanceof Data_Maybe.Nothing) {
         return "Erro de Tipo";
     };
-    throw new Error("Failed pattern match at CompileOmega (line 318, column 19 - line 320, column 46): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at CompileOmega (line 304, column 19 - line 306, column 46): " + [ v.constructor.name ]);
 };
 var makeDefOmega = function (str) {
     if (str === "true") {
@@ -255,47 +262,26 @@ var makeDefOmega = function (str) {
     if (str === "sub") {
         return "  sub     = \\n: Nat. \\m:Nat. m [Nat] (\\n: Nat. fst [Nat] [Nat] (n [And Nat Nat] (\\p: And Nat Nat. (pair [Nat] [Nat] (snd [Nat] [Nat] p) (succ (snd [Nat] [Nat] p)))) (pair [Nat] [Nat] 0 0))) n;";
     };
+    if (str === "isZero") {
+        return "  isZero  = \\n:Nat. n [Bool] (\\b: Bool. (\\\\C:*. \\a: C. \\b: C. b)) (\\\\C:*. \\a: C. \\b: C. a);";
+    };
+    if (str === "eq") {
+        return "  eq     = \\n:Nat. \\m:Nat. and (isZero (sub n m)) (isZero (sub m n));";
+    };
+    if (str === "ne") {
+        return "  ne     = \\n:Nat. \\m:Nat. not (and (isZero (sub n m)) (isZero (sub m n)));";
+    };
+    if (str === "gt") {
+        return "  gt     = \\n:Nat. \\m:Nat. not (isZero (sub n m)) ;";
+    };
+    if (str === "lt") {
+        return "  lt     = \\n:Nat. \\m:Nat. not (isZero (sub m n)) ;";
+    };
+    if (str === "natRec") {
+        return "  natRec  = \\\\C:*. \\n:Nat. \\step: C -> C. \\init:C. n [C] step init;";
+    };
     return "?";
 };
-
-// defs :: String 
-// defs = "typedef\n"
-//     <>   "  Bool          = forall C:*, C -> C -> C;\n"
-//     <>   "  Nat           = forall C:*, (C -> C) -> C -> C;\n"
-//     <>   "  And           = \\A:*, \\B:*, forall C:*, (A -> B -> C) -> C;\n"
-//     <>   "  Or            = \\A:*, \\B:*, forall C:*, (A -> C) -> (B -> C) -> C;\n"
-//     <> "end\n"
-// 
-//     <> "let\n"
-//     <>   "  true          = \\\\C:*. \\a: C. \\b: C. a;\n"
-//     <>   "  false         = \\\\C:*. \\a: C. \\b: C. b;\n"
-//     <>   "  if            = \\\\D:*. \\c: Bool. \\a: D. \\b: D. c [D] a b;\n"
-//     <>   "  and           = \\a: Bool. \\b: Bool. if [Bool] a b false;\n"
-//     <>   "  or            = \\a: Bool. \\b: Bool. if [Bool] a true b;\n"
-//     <>   "  not           = \\b: Bool. if [Bool] b false true;\n\n"
-// 
-//     <>   "  pair          = \\\\A:*. \\\\B:*. \\a: A. \\b: B. \\\\C:*. \\f: A->B->C. f a b;\n"
-//     <>   "  fst           = \\\\A:*. \\\\B:*. \\p: And A B. p [A] (\\a: A.\\b: B. a) ;\n"
-//     <>   "  snd           = \\\\A:*. \\\\B:*. \\p: And A B. p [B] (\\a: A.\\b: B. b) ;\n\n"
-// 
-//     -- <>   "  left          = \\\\A:*. \\\\B:*. \\a: A. \\\\C:*. \\f: A->C. \g: B->C. f a;\n"
-//     -- <>   "  right         = \\\\A:*. \\\\B:*. \\b: B. \\\\C:*. \\f: A->C. \g: B->C. g b;\n"
-//     -- <>   "  case          = \\\\A:*. \\\\B:*. \\\\D:*. \\u: Either A B. \\f: A->D. \g: B->D. u [D] f g;\n\n"
-// 
-//     <>   "  succ          = \\n: Nat. \\\\C:*. \\f: C -> C. \\x :C. f (n [C] f x);\n "
-//     <>   "  add           = \\n: Nat. \\m: Nat. n [Nat] succ m;\n"
-//     <>   "  double        = \\n: Nat. n [Nat] succ n;\n"
-//     <>   "  mult          = \\n: Nat. \\m: Nat. m [Nat] (\\p: Nat. add n p) 0;\n\n"
-// 
-//     <>   "  shiftInc      = \\p: Product Nat Nat. (pair [Nat] [Nat] (snd [Nat] [Nat] p) (succ (snd [Nat] [Nat] p)));\n"
-//     <>   "  pred          = \\n: Nat. fst [Nat] [Nat] (n [And Nat Nat] shiftInc (pair [Nat] [Nat] 0 0));\n"
-//     <>   "  sub           = \\n: Nat. \\m: Nat. m [Nat] pred n;\n"
-//     <>   "  isZero        = \\n:Nat. n [Bool] (\\b: Bool. false) true;\n"
-// 
-//     <>   "  eq            = \\n:Nat. \\m:Nat. and (isZero (sub n m)) (isZero (sub m n));\n"
-//     -- <>   "  gt            = \\n:Nat. \\m:Nat. (isZero (sub n m)) ;\n"
-//     
-//     <> "in\n\n"
 var makeDefsUsed = function (v) {
     if (v instanceof Data_List_Types.Nil) {
         return "\x0a";
@@ -303,16 +289,11 @@ var makeDefsUsed = function (v) {
     if (v instanceof Data_List_Types.Cons) {
         return makeDefOmega(v.value0) + ("\x0a" + makeDefsUsed(v.value1));
     };
-    throw new Error("Failed pattern match at CompileOmega (line 299, column 1 - line 299, column 40): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at CompileOmega (line 285, column 1 - line 285, column 40): " + [ v.constructor.name ]);
 };
 var makeDefsBlock = function (l) {
     return "typedef\x0a" + ("  Bool          = forall C:*, C -> C -> C;\x0a" + ("  Nat           = forall C:*, (C -> C) -> C -> C;\x0a" + ("  And           = \\A:*, \\B:*, forall C:*, (A -> B -> C) -> C;\x0a" + ("  Or            = \\A:*, \\B:*, forall C:*, (A -> C) -> (B -> C) -> C;\x0a" + ("end\x0a" + ("let\x0a" + (makeDefsUsed(l) + "in\x0a\x0a")))))));
 };
-
-// makeLOmegaDefs :: Term → String
-// makeLOmegaDefs expr = case typeInfer emptyEnv expr of 
-//                     Just _ -> defs <> termToOmegaDefs expr emptyEnv
-//                     Nothing -> "Erro de Tipo"
 var makeLOmegaDefs = function (expr) {
     var v = TypeSystem.typeInfer(TypeSystem.emptyEnv)(expr);
     if (v instanceof Data_Maybe.Just) {
@@ -321,14 +302,11 @@ var makeLOmegaDefs = function (expr) {
     if (v instanceof Data_Maybe.Nothing) {
         return "Erro de Tipo";
     };
-    throw new Error("Failed pattern match at CompileOmega (line 329, column 23 - line 331, column 46): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at CompileOmega (line 310, column 23 - line 312, column 46): " + [ v.constructor.name ]);
 };
 export {
-    shiftIncTerm,
-    testTypes,
     makeTypesOmega,
     makeTypesOmegaDefs,
-    makeNatural,
     termToOmega,
     termToOmegaDefs,
     makeDefOmega,

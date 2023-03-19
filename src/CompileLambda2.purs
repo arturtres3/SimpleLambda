@@ -2,21 +2,13 @@ module CompileLambda2 where
 
 import Prelude
 
-import Data.Maybe (Maybe(..))
-import Data.List (List(..), (:))
 import Data.Int (decimal, toStringAs)
-import Structures (BinopCode(..), Term(..), TermType(..), UnopCode(..), listTermsUsed)
+import Data.List (List(..), (:))
+import Data.Maybe (Maybe(..))
+import Structures (BinopCode(..), Term(..), TermType(..), UnopCode(..), listTermsUsed, makeNatural)
 import TypeSystem (Env, emptyEnv, typeInfer, update)
+import TermLibrary (eqTerm, neTerm, gtTerm, ltTerm, subTerm)
 
-shiftIncTerm :: Term
-shiftIncTerm = (T_func "p" (Pair Nat Nat) 
-                        (T_pair (T_snd (T_var "p"))  
-                        (T_binop  Add  (T_snd (T_var "p")) (T_num 1)))
-                    ) 
-
-makeNatural:: Int -> String 
-makeNatural 0 = "x"
-makeNatural n = "(f " <> (makeNatural (n-1)) <> ")"
 
 makeTypesL2 :: Maybe TermType -> String
 makeTypesL2 t = case t of
@@ -54,6 +46,10 @@ termToL2 expr env = case expr of
 
             T_func id t_var e1 -> "(\\x_" <> id <> ": " <> makeTypesL2 (Just t_var) <> ". " 
                                   <> termToL2 e1 (update env id t_var) <> ")"
+
+            T_func_system id t_var e1 -> "(\\" <> id <> ": " <> makeTypesL2 (Just t_var) <> ". " 
+                                  <> termToL2 e1 (update env id t_var) <> ")"
+            T_var_system id -> id
 
             T_app e1 e2 -> "(" <> termToL2 e1 env <> " " <> termToL2 e2 env <> ")"
 
@@ -115,21 +111,46 @@ termToL2 expr env = case expr of
                                 <> "(\\\\C.\\a:C.\\b:C.b) "
                                 <> "(\\\\C.\\a:C.\\b:C.a))"
 
-            T_binop Sub e1 e2 -> "((\\n: " <> makeTypesL2 (Just Nat) <> ". \\m: " <> makeTypesL2 (Just Nat) <> ". "
-                                <> "m [" <> makeTypesL2 (Just Nat) <> "] "
+--             T_binop Sub e1 e2 -> "((\\n: " <> makeTypesL2 (Just Nat) <> ". \\m: " <> makeTypesL2 (Just Nat) <> ". "
+--                                 <> "m [" <> makeTypesL2 (Just Nat) <> "] "
+-- 
+--                                 -- predecessor
+--                                 <> "(\\n: " <> makeTypesL2 (Just Nat) <> ". "
+--                                 <> "(\\\\A. \\\\B. \\p: (forall C, (A -> B -> C) -> C). p [A] (\\a: A.\\b: B. a))" -- fst
+--                                 <> "[" <> makeTypesL2 (Just Nat) <> "][" <> makeTypesL2 (Just Nat) <> "]"
+--                                 <> "( n [" <> makeTypesL2 (Just (Pair Nat Nat)) <> "]"
+--                                 <> termToL2 shiftIncTerm env 
+--                                 <> termToL2 (T_pair (T_num 0) (T_num 0)) env 
+--                                 <> "))" 
+-- 
+--                                 <> " n)"
+--                                 <> termToL2 e1 env <> " "
+--                                 <> termToL2 e2 env <> ")"
 
-                                -- predecessor
-                                <> "(\\n: " <> makeTypesL2 (Just Nat) <> ". "
-                                <> "(\\\\A. \\\\B. \\p: (forall C, (A -> B -> C) -> C). p [A] (\\a: A.\\b: B. a))" -- fst
-                                <> "[" <> makeTypesL2 (Just Nat) <> "][" <> makeTypesL2 (Just Nat) <> "]"
-                                <> "( n [" <> makeTypesL2 (Just (Pair Nat Nat)) <> "]"
-                                <> termToL2 shiftIncTerm env 
-                                <> termToL2 (T_pair (T_num 0) (T_num 0)) env 
-                                <> "))" 
+            T_binop Sub e1 e2 -> "(" <> termToL2 subTerm env <> " "
+                                    <> termToL2 e1 env <> " "
+                                    <> termToL2 e2 env <> ")"
+            
+            T_binop Eq e1 e2 -> "(" <> termToL2 eqTerm env <> " "
+                                    <> termToL2 e1 env <> " "
+                                    <> termToL2 e2 env <> ")"
 
-                                <> " n)"
-                                <> termToL2 e1 env <> " "
-                                <> termToL2 e2 env <> ")"
+            T_binop Ne e1 e2 -> "(" <> termToL2 neTerm env <> " "
+                                    <> termToL2 e1 env <> " "
+                                    <> termToL2 e2 env <> ")"
+
+            T_binop Gt e1 e2 -> "(" <> termToL2 gtTerm env <> " "
+                                    <> termToL2 e1 env <> " "
+                                    <> termToL2 e2 env <> ")"
+
+            T_binop Lt e1 e2 -> "(" <> termToL2 ltTerm env <> " "
+                                    <> termToL2 e1 env <> " "
+                                    <> termToL2 e2 env <> ")"
+
+            T_natRec e1 e2 e3 -> "(" <> termToL2 e1 env
+                                <> " [" <> (makeTypesL2 $ typeInfer env e3) <> "] "
+                                <> termToL2 e2 env <> " "
+                                <> termToL2 e3 env <> ")"
 
 
             _ -> "INCOMPLETO"
@@ -205,6 +226,27 @@ termToL2Defs expr env = case expr of
                                 <> termToL2Defs e1 env <> " "
                                 <> termToL2Defs e2 env <> ")"
 
+            T_binop Eq e1 e2 -> "(eq "
+                                    <> termToL2Defs e1 env <> " "
+                                    <> termToL2Defs e2 env <> ")"
+            
+            T_binop Ne e1 e2 -> "(ne "
+                                    <> termToL2Defs e1 env <> " "
+                                    <> termToL2Defs e2 env <> ")"
+
+            T_binop Gt e1 e2 -> "(gt "
+                                    <> termToL2Defs e1 env <> " "
+                                    <> termToL2Defs e2 env <> ")"
+
+            T_binop Lt e1 e2 -> "(lt "
+                                    <> termToL2Defs e1 env <> " "
+                                    <> termToL2Defs e2 env <> ")"
+
+            T_natRec e1 e2 e3 -> "(natRec ["
+                                <> (makeTypesL2Defs $ typeInfer env e3) <> "] "
+                                <> termToL2Defs e1 env <> " "
+                                <> termToL2Defs e2 env <> " "
+                                <> termToL2Defs e3 env <> ")"
 
             _ -> "INCOMPLETO"
 
@@ -226,6 +268,16 @@ makeDefL2 str = case str of
 
     "succ"  -> "  succ    = \\n: Nat. \\\\C. \\f: C -> C. \\x :C. f (n [C] f x);"
     "sub"   -> "  sub     = \\n: Nat. \\m:Nat. m [Nat] (\\n: Nat. fst [Nat] [Nat] (n [(forall C, (Nat -> Nat -> C) -> C)] (\\p: (forall C, (Nat -> Nat -> C) -> C). (pair [Nat] [Nat] (snd [Nat] [Nat] p) (succ (snd [Nat] [Nat] p)))) (pair [Nat] [Nat] 0 0))) n;"
+
+    "isZero"-> "  isZero  = \\n:Nat. n [Bool] (\\b: Bool. (\\\\C. \\a: C. \\b: C. b)) (\\\\C. \\a: C. \\b: C. a);"
+
+    "eq"    -> "  eq     = \\n:Nat. \\m:Nat. and (isZero (sub n m)) (isZero (sub m n));"
+    "ne"    -> "  ne     = \\n:Nat. \\m:Nat. not (and (isZero (sub n m)) (isZero (sub m n)));"
+
+    "gt"    -> "  gt     = \\n:Nat. \\m:Nat. not (isZero (sub n m)) ;"
+    "lt"    -> "  lt     = \\n:Nat. \\m:Nat. not (isZero (sub m n)) ;"
+
+    "natRec"-> "  natRec  = \\\\C. \\n:Nat. \\step: C -> C. \\init:C. n [C] step init;"
 
     _       -> "?"
 
