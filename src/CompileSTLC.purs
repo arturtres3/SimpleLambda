@@ -177,14 +177,6 @@ termToSTLC expr t env = case expr of
                                  
             _ -> "incompleto"
 
-lastType :: Maybe TermType -> Maybe TermType
-lastType t = case t of 
-            Just Nat -> Just Nat
-            Just Bool -> Just Bool
-
-            Just (Pair t1 _) -> lastType (Just t1)
-            Just (Func _ t2) -> lastType (Just t2)
-            Nothing -> Nothing 
 
 termToSTLCSimple :: Term -> Env -> String
 termToSTLCSimple expr env = case expr of 
@@ -214,7 +206,7 @@ termToSTLCSimple expr env = case expr of
             T_fst e1 ->  case (typeInfer env e1) of 
                         Just (Pair t1 t2) -> 
                                     if t1 == t2 then
-                                        "((\\p: (A->A->A) -> ((A->A)->A->A). \\f:A->A.\\x:A. (p " -- <> makePairTypeSTLC (typesSTLC (lastType (typeInfer env e1))) <> ". p "
+                                        "((\\p: (A->A->A) -> ((A->A)->A->A). \\f:A->A.\\x:A. (p " 
                                         <> (termToSTLCSimple T_true env) <> ") f x)"
                                         <> termToSTLCSimple e1 env <> ")"
 
@@ -224,7 +216,7 @@ termToSTLCSimple expr env = case expr of
             T_snd e1 ->  case (typeInfer env e1) of 
                         Just (Pair t1 t2) -> 
                                     if t1 == t2 then
-                                        "((\\p: (A->A->A) -> ((A->A)->A->A). \\f:A->A.\\x:A. (p " -- <> makePairTypeSTLC (typesSTLC (lastType (typeInfer env e1))) <> ". p "
+                                        "((\\p: (A->A->A) -> ((A->A)->A->A). \\f:A->A.\\x:A. (p " 
                                         <> (termToSTLCSimple T_false env) <> ") f x)"
                                         <>  termToSTLCSimple e1 env <> ")"
 
@@ -360,9 +352,6 @@ makeDefSTLC str = case str of
     "not"   -> "  not     = \\bin :(A->A->A). \\a:A. \\b:A. bin b a;"
 
     "natRec"-> "  natRec  = \\n:Nat. \\step: A -> A. \\init:A. n step init;"
-
-    --"succ"  -> "  succ    = "
-    --"sub"   -> "  sub     = "
 
     _ -> "?"
 

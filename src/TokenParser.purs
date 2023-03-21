@@ -11,6 +11,7 @@ import Data.Identity (Identity)
 import Data.List (List(..), (:))
 import Data.List.NonEmpty (toList)
 import Data.Tuple (Tuple(..), fst, snd)
+import Data.Tuple.Nested (Tuple3, get1, get2, get3, tuple3)
 import Data.Either (Either(..))
 
 import Parsing (Parser, runParser)
@@ -76,15 +77,22 @@ parseLet = (do
             pure (T_let (fst param) (snd param) e1 e2)
             )
 
+parseNatRecParams :: (P Term) -> P (Tuple3 Term Term Term) 
+parseNatRecParams exp = (do 
+                    e1 <- exp
+                    reservedOp ";"
+                    e2 <- exp
+                    reservedOp ";"
+                    e3 <- exp
+                    pure (tuple3 e1 e2 e3)
+                    )
+
+
 parseNatRec :: P Term
 parseNatRec = (do
               reserved "natRec"
-              e1 <- expr
-              reservedOp ":"
-              e2 <- expr
-              reservedOp ":"
-              e3 <- expr
-              pure (T_natRec e1 e2 e3)
+              triple <- parens (parseNatRecParams expr)
+              pure (T_natRec (get1 triple) (get2 triple) (get3 triple))
               )
 
 parseIf :: P Term 
@@ -125,8 +133,8 @@ table :: OperatorTable Identity String Term
 table =
   [ [ Prefix (reservedOp "!" $> T_unop Not) 
     , Prefix (reservedOp "-" $> T_unop Negate)]
-  , [ Infix (reservedOp "/"  $> T_binop Div)  AssocLeft
-    , Infix (reservedOp "*"  $> T_binop Mult) AssocLeft]
+  , [ --Infix (reservedOp "/"  $> T_binop Div)  AssocLeft    -- não gera código para div
+      Infix (reservedOp "*"  $> T_binop Mult) AssocLeft]
   , [ Infix (reservedOp "+"  $> T_binop Add)  AssocLeft
     , Infix (reservedOp "-"  $> T_binop Sub)  AssocLeft]
   , [ Infix (reservedOp "<"  $> T_binop Lt)   AssocLeft

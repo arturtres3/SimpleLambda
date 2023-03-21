@@ -18,11 +18,11 @@ languageDef = LanguageDef
   , nestedComments: false
   , identStart: lower -- variaveis comecam com minuscula 
   , identLetter: alphaNum <|> (char '_')
-  , opStart: oneOf ['-', ':', '+', '*', '/', '|', '=', '~', '<', ' ', 'X']
+  , opStart: oneOf ['-', ':', '+', '*', '|', '=', '~', '<', ' ', 'X'] -- , '/'
   , opLetter: oneOf ['=', '|']
   , reservedNames: ["true", "false", "if", "then", "else", "fst", "snd", "let", "in", "func", "Nat", "Bool", "natRec"]
   , caseSensitive: true
-  , reservedOpNames: ["=", "+", "-", "*", "/", "||", "=", "~", "<", ":", "<-", "X"]
+  , reservedOpNames: ["=", "+", "-", "*", "||", "=", "~", "<", ":", "<-", "X"] --, "/"
 }
 
 token :: TokenParser

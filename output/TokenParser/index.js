@@ -7,6 +7,7 @@ import * as Data_Functor from "../Data.Functor/index.js";
 import * as Data_List_NonEmpty from "../Data.List.NonEmpty/index.js";
 import * as Data_List_Types from "../Data.List.Types/index.js";
 import * as Data_Tuple from "../Data.Tuple/index.js";
+import * as Data_Tuple_Nested from "../Data.Tuple.Nested/index.js";
 import * as Parsing from "../Parsing/index.js";
 import * as Parsing_Combinators from "../Parsing.Combinators/index.js";
 import * as Parsing_Expr from "../Parsing.Expr/index.js";
@@ -25,11 +26,11 @@ var $runtime_lazy = function (name, moduleName, init) {
     };
 };
 var voidLeft = /* #__PURE__ */ Data_Functor.voidLeft(Parsing.functorParserT);
-var alt = /* #__PURE__ */ Control_Alt.alt(Parsing.altParserT);
-var fix = /* #__PURE__ */ Control_Lazy.fix(Parsing.lazyParserT);
 var bind = /* #__PURE__ */ Control_Bind.bind(Parsing.bindParserT);
 var discard = /* #__PURE__ */ Control_Bind.discard(Control_Bind.discardUnit)(Parsing.bindParserT);
 var pure = /* #__PURE__ */ Control_Applicative.pure(Parsing.applicativeParserT);
+var alt = /* #__PURE__ */ Control_Alt.alt(Parsing.altParserT);
+var fix = /* #__PURE__ */ Control_Lazy.fix(Parsing.lazyParserT);
 var map = /* #__PURE__ */ Data_Functor.map(Parsing.functorParserT);
 var whiteSpace = /* #__PURE__ */ (function () {
     return Tokens.token.whiteSpace;
@@ -40,7 +41,7 @@ var reservedOp = /* #__PURE__ */ (function () {
 
 // <|> expr ENTRA EM LOOP
 var table = /* #__PURE__ */ (function () {
-    return [ [ new Parsing_Expr.Prefix(voidLeft(reservedOp("!"))(Structures.T_unop.create(Structures.Not.value))), new Parsing_Expr.Prefix(voidLeft(reservedOp("-"))(Structures.T_unop.create(Structures.Negate.value))) ], [ new Parsing_Expr.Infix(voidLeft(reservedOp("/"))(Structures.T_binop.create(Structures.Div.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("*"))(Structures.T_binop.create(Structures.Mult.value)), Parsing_Expr.AssocLeft.value) ], [ new Parsing_Expr.Infix(voidLeft(reservedOp("+"))(Structures.T_binop.create(Structures.Add.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("-"))(Structures.T_binop.create(Structures.Sub.value)), Parsing_Expr.AssocLeft.value) ], [ new Parsing_Expr.Infix(voidLeft(reservedOp("<"))(Structures.T_binop.create(Structures.Lt.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp(">"))(Structures.T_binop.create(Structures.Gt.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("=="))(Structures.T_binop.create(Structures.Eq.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("!="))(Structures.T_binop.create(Structures.Ne.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("&&"))(Structures.T_binop.create(Structures.And.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("||"))(Structures.T_binop.create(Structures.Or.value)), Parsing_Expr.AssocLeft.value) ], [ new Parsing_Expr.Infix(voidLeft(whiteSpace)(Structures.T_app.create), Parsing_Expr.AssocLeft.value) ], [ new Parsing_Expr.Infix(voidLeft(reservedOp(","))(Structures.T_pair.create), Parsing_Expr.AssocLeft.value) ] ];
+    return [ [ new Parsing_Expr.Prefix(voidLeft(reservedOp("!"))(Structures.T_unop.create(Structures.Not.value))), new Parsing_Expr.Prefix(voidLeft(reservedOp("-"))(Structures.T_unop.create(Structures.Negate.value))) ], [ new Parsing_Expr.Infix(voidLeft(reservedOp("*"))(Structures.T_binop.create(Structures.Mult.value)), Parsing_Expr.AssocLeft.value) ], [ new Parsing_Expr.Infix(voidLeft(reservedOp("+"))(Structures.T_binop.create(Structures.Add.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("-"))(Structures.T_binop.create(Structures.Sub.value)), Parsing_Expr.AssocLeft.value) ], [ new Parsing_Expr.Infix(voidLeft(reservedOp("<"))(Structures.T_binop.create(Structures.Lt.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp(">"))(Structures.T_binop.create(Structures.Gt.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("=="))(Structures.T_binop.create(Structures.Eq.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("!="))(Structures.T_binop.create(Structures.Ne.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("&&"))(Structures.T_binop.create(Structures.And.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("||"))(Structures.T_binop.create(Structures.Or.value)), Parsing_Expr.AssocLeft.value) ], [ new Parsing_Expr.Infix(voidLeft(whiteSpace)(Structures.T_app.create), Parsing_Expr.AssocLeft.value) ], [ new Parsing_Expr.Infix(voidLeft(reservedOp(","))(Structures.T_pair.create), Parsing_Expr.AssocLeft.value) ] ];
 })();
 var tableType = /* #__PURE__ */ (function () {
     return [ [ new Parsing_Expr.Infix(voidLeft(reservedOp("X"))(Structures.Pair.create), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("->"))(Structures.Func.create), Parsing_Expr.AssocRight.value) ] ];
@@ -48,6 +49,19 @@ var tableType = /* #__PURE__ */ (function () {
 var reserved = /* #__PURE__ */ (function () {
     return Tokens.token.reserved;
 })();
+var parseNatRecParams = function (exp) {
+    return bind(exp)(function (e1) {
+        return discard(reservedOp(";"))(function () {
+            return bind(exp)(function (e2) {
+                return discard(reservedOp(";"))(function () {
+                    return bind(exp)(function (e3) {
+                        return pure(Data_Tuple_Nested.tuple3(e1)(e2)(e3));
+                    });
+                });
+            });
+        });
+    });
+};
 var parens = /* #__PURE__ */ (function () {
     return Tokens.token.parens;
 })();
@@ -68,7 +82,7 @@ var makeFunc = function (v) {
         if (v instanceof Data_List_Types.Cons) {
             return new Structures.T_func(v.value0.value0, v.value0.value1, makeFunc(v.value1)(v1));
         };
-        throw new Error("Failed pattern match at TokenParser (line 55, column 1 - line 55, column 41): " + [ v.constructor.name, v1.constructor.name ]);
+        throw new Error("Failed pattern match at TokenParser (line 56, column 1 - line 56, column 41): " + [ v.constructor.name, v1.constructor.name ]);
     };
 };
 var integer = /* #__PURE__ */ (function () {
@@ -88,7 +102,7 @@ var parseManyParams = /* #__PURE__ */ bind(/* #__PURE__ */ Parsing_Combinators.s
     return pure(Data_List_NonEmpty.toList(paramList));
 });
 var parseTerm = function (p) {
-    return alt(parens(p))(alt(voidLeft(reserved("true"))(Structures.T_true.value))(alt(voidLeft(reserved("false"))(Structures.T_false.value))(alt(map(Structures.T_var.create)(identifier))(alt(map(Structures.T_num.create)(integer))(alt($lazy_parseFunc(116))(alt($lazy_parseIf(117))(alt($lazy_parseLet(118))(alt($lazy_parseFst(119))(alt($lazy_parseSnd(120))($lazy_parseNatRec(121)))))))))));
+    return alt(parens(p))(alt(voidLeft(reserved("true"))(Structures.T_true.value))(alt(voidLeft(reserved("false"))(Structures.T_false.value))(alt(map(Structures.T_var.create)(identifier))(alt(map(Structures.T_num.create)(integer))(alt($lazy_parseFunc(124))(alt($lazy_parseIf(125))(alt($lazy_parseLet(126))(alt($lazy_parseFst(127))(alt($lazy_parseSnd(128))($lazy_parseNatRec(129)))))))))));
 };
 var $lazy_expr = /* #__PURE__ */ $runtime_lazy("expr", "TokenParser", function () {
     var allExprs = function (p) {
@@ -98,14 +112,14 @@ var $lazy_expr = /* #__PURE__ */ $runtime_lazy("expr", "TokenParser", function (
 });
 var $lazy_parseFst = /* #__PURE__ */ $runtime_lazy("parseFst", "TokenParser", function () {
     return discard(reserved("fst"))(function () {
-        return map(Structures.T_fst.create)($lazy_expr(103));
+        return map(Structures.T_fst.create)($lazy_expr(111));
     });
 });
 var $lazy_parseFunc = /* #__PURE__ */ $runtime_lazy("parseFunc", "TokenParser", function () {
     return discard(reserved("func"))(function () {
         return bind(parens(parseManyParams))(function (list) {
             return discard(reservedOp("="))(function () {
-                return bind($lazy_expr(64))(function (e1) {
+                return bind($lazy_expr(65))(function (e1) {
                     return pure(makeFunc(list)(e1));
                 });
             });
@@ -114,11 +128,11 @@ var $lazy_parseFunc = /* #__PURE__ */ $runtime_lazy("parseFunc", "TokenParser", 
 });
 var $lazy_parseIf = /* #__PURE__ */ $runtime_lazy("parseIf", "TokenParser", function () {
     return discard(reserved("if"))(function () {
-        return bind($lazy_expr(93))(function (e1) {
+        return bind($lazy_expr(101))(function (e1) {
             return discard(reserved("then"))(function () {
-                return bind($lazy_expr(95))(function (e2) {
+                return bind($lazy_expr(103))(function (e2) {
                     return discard(reserved("else"))(function () {
-                        return bind($lazy_expr(97))(function (e3) {
+                        return bind($lazy_expr(105))(function (e3) {
                             return pure(new Structures.T_if(e1, e2, e3));
                         });
                     });
@@ -131,9 +145,9 @@ var $lazy_parseLet = /* #__PURE__ */ $runtime_lazy("parseLet", "TokenParser", fu
     return discard(reserved("let"))(function () {
         return bind(parseParam)(function (param) {
             return discard(reservedOp("="))(function () {
-                return bind($lazy_expr(73))(function (e1) {
+                return bind($lazy_expr(74))(function (e1) {
                     return discard(reserved("in"))(function () {
-                        return bind($lazy_expr(75))(function (e2) {
+                        return bind($lazy_expr(76))(function (e2) {
                             return pure(new Structures.T_let(Data_Tuple.fst(param), Data_Tuple.snd(param), e1, e2));
                         });
                     });
@@ -144,31 +158,23 @@ var $lazy_parseLet = /* #__PURE__ */ $runtime_lazy("parseLet", "TokenParser", fu
 });
 var $lazy_parseNatRec = /* #__PURE__ */ $runtime_lazy("parseNatRec", "TokenParser", function () {
     return discard(reserved("natRec"))(function () {
-        return bind($lazy_expr(82))(function (e1) {
-            return discard(reservedOp(":"))(function () {
-                return bind($lazy_expr(84))(function (e2) {
-                    return discard(reservedOp(":"))(function () {
-                        return bind($lazy_expr(86))(function (e3) {
-                            return pure(new Structures.T_natRec(e1, e2, e3));
-                        });
-                    });
-                });
-            });
+        return bind(parens(parseNatRecParams($lazy_expr(94))))(function (triple) {
+            return pure(new Structures.T_natRec(Data_Tuple_Nested.get1(triple), Data_Tuple_Nested.get2(triple), Data_Tuple_Nested.get3(triple)));
         });
     });
 });
 var $lazy_parseSnd = /* #__PURE__ */ $runtime_lazy("parseSnd", "TokenParser", function () {
     return discard(reserved("snd"))(function () {
-        return map(Structures.T_snd.create)($lazy_expr(108));
+        return map(Structures.T_snd.create)($lazy_expr(116));
     });
 });
-var expr = /* #__PURE__ */ $lazy_expr(142);
-var parseFst = /* #__PURE__ */ $lazy_parseFst(100);
-var parseFunc = /* #__PURE__ */ $lazy_parseFunc(59);
-var parseIf = /* #__PURE__ */ $lazy_parseIf(90);
-var parseLet = /* #__PURE__ */ $lazy_parseLet(68);
-var parseNatRec = /* #__PURE__ */ $lazy_parseNatRec(79);
-var parseSnd = /* #__PURE__ */ $lazy_parseSnd(105);
+var expr = /* #__PURE__ */ $lazy_expr(150);
+var parseFst = /* #__PURE__ */ $lazy_parseFst(108);
+var parseFunc = /* #__PURE__ */ $lazy_parseFunc(60);
+var parseIf = /* #__PURE__ */ $lazy_parseIf(98);
+var parseLet = /* #__PURE__ */ $lazy_parseLet(69);
+var parseNatRec = /* #__PURE__ */ $lazy_parseNatRec(91);
+var parseSnd = /* #__PURE__ */ $lazy_parseSnd(113);
 
 // faz parsing do espaco em branco antes do primeiro token 
 var parseExpr = /* #__PURE__ */ discard(/* #__PURE__ */ Parsing_Combinators.optional(/* #__PURE__ */ Parsing_Combinators["try"](whiteSpace)))(function () {
@@ -182,7 +188,7 @@ var getTerm = function (inputText) {
     if (v instanceof Data_Either.Right) {
         return v.value0;
     };
-    throw new Error("Failed pattern match at TokenParser (line 172, column 21 - line 174, column 35): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at TokenParser (line 180, column 21 - line 182, column 35): " + [ v.constructor.name ]);
 };
 export {
     parens,
@@ -196,6 +202,7 @@ export {
     makeFunc,
     parseFunc,
     parseLet,
+    parseNatRecParams,
     parseNatRec,
     parseIf,
     parseFst,

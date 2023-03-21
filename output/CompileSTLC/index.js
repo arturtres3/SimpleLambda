@@ -96,7 +96,7 @@ var validIfSelector = function (expr) {
     if (expr instanceof Structures.T_natRec) {
         return validIfSelector(expr.value0) && (validIfSelector(expr.value1) && validIfSelector(expr.value2));
     };
-    throw new Error("Failed pattern match at CompileSTLC (line 420, column 24 - line 445, column 96): " + [ expr.constructor.name ]);
+    throw new Error("Failed pattern match at CompileSTLC (line 409, column 24 - line 434, column 96): " + [ expr.constructor.name ]);
 };
 var typesSTLC = function (t) {
     if (t instanceof Data_Maybe.Just && t.value0 instanceof Structures.Bool) {
@@ -350,7 +350,7 @@ var makeDefsUsed = function (v) {
     if (v instanceof Data_List_Types.Cons) {
         return makeDefSTLC(v.value0) + ("\x0a" + makeDefsUsed(v.value1));
     };
-    throw new Error("Failed pattern match at CompileSTLC (line 369, column 1 - line 369, column 40): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at CompileSTLC (line 358, column 1 - line 358, column 40): " + [ v.constructor.name ]);
 };
 var makeDefsBlock = function (l) {
     return "let\x0a" + (makeDefsUsed(l) + "in\x0a\x0a");
@@ -467,37 +467,6 @@ var termToSTLC = function (expr) {
         };
     };
 };
-var lastType = function ($copy_t) {
-    var $tco_done = false;
-    var $tco_result;
-    function $tco_loop(t) {
-        if (t instanceof Data_Maybe.Just && t.value0 instanceof Structures.Nat) {
-            $tco_done = true;
-            return new Data_Maybe.Just(Structures.Nat.value);
-        };
-        if (t instanceof Data_Maybe.Just && t.value0 instanceof Structures.Bool) {
-            $tco_done = true;
-            return new Data_Maybe.Just(Structures.Bool.value);
-        };
-        if (t instanceof Data_Maybe.Just && t.value0 instanceof Structures.Pair) {
-            $copy_t = new Data_Maybe.Just(t.value0.value0);
-            return;
-        };
-        if (t instanceof Data_Maybe.Just && t.value0 instanceof Structures.Func) {
-            $copy_t = new Data_Maybe.Just(t.value0.value1);
-            return;
-        };
-        if (t instanceof Data_Maybe.Nothing) {
-            $tco_done = true;
-            return Data_Maybe.Nothing.value;
-        };
-        throw new Error("Failed pattern match at CompileSTLC (line 181, column 14 - line 187, column 31): " + [ t.constructor.name ]);
-    };
-    while (!$tco_done) {
-        $tco_result = $tco_loop($copy_t);
-    };
-    return $tco_result;
-};
 var canMakeSTLCSimple = function (expr) {
     if (expr instanceof Structures.T_true) {
         return true;
@@ -565,7 +534,7 @@ var canMakeSTLCSimple = function (expr) {
     if (expr instanceof Structures.T_func_system) {
         return canMakeSTLCSimple(expr.value2);
     };
-    throw new Error("Failed pattern match at CompileSTLC (line 392, column 26 - line 416, column 57): " + [ expr.constructor.name ]);
+    throw new Error("Failed pattern match at CompileSTLC (line 381, column 26 - line 405, column 57): " + [ expr.constructor.name ]);
 };
 var canMakeSTLC = function (expr) {
     if (expr instanceof Structures.T_true) {
@@ -634,11 +603,11 @@ var canMakeSTLC = function (expr) {
     if (expr instanceof Structures.T_func_system) {
         return canMakeSTLC(expr.value2);
     };
-    throw new Error("Failed pattern match at CompileSTLC (line 448, column 20 - line 472, column 51): " + [ expr.constructor.name ]);
+    throw new Error("Failed pattern match at CompileSTLC (line 437, column 20 - line 461, column 51): " + [ expr.constructor.name ]);
 };
 var makeSTLC = function (expr) {
-    var $354 = canMakeSTLC(expr);
-    if ($354) {
+    var $345 = canMakeSTLC(expr);
+    if ($345) {
         var v = TypeSystem.typeInfer(TypeSystem.emptyEnv)(expr);
         if (v instanceof Data_Maybe.Just) {
             return termToSTLC(expr)(Data_Maybe.Nothing.value)(TypeSystem.emptyEnv);
@@ -646,13 +615,13 @@ var makeSTLC = function (expr) {
         if (v instanceof Data_Maybe.Nothing) {
             return "Erro de Tipo";
         };
-        throw new Error("Failed pattern match at CompileSTLC (line 477, column 21 - line 479, column 50): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at CompileSTLC (line 466, column 21 - line 468, column 50): " + [ v.constructor.name ]);
     };
     return "O termo seletor do if n\xe3o pode conter vari\xe1veis.\x0aN\xe3o \xe9 poss\xedvel representar subtra\xe7\xe3o ou compara\xe7\xf5es entre naturais em STLC.";
 };
 var makeSTLCDefs = function (expr) {
-    var $357 = canMakeSTLC(expr);
-    if ($357) {
+    var $348 = canMakeSTLC(expr);
+    if ($348) {
         var v = TypeSystem.typeInfer(TypeSystem.emptyEnv)(expr);
         if (v instanceof Data_Maybe.Just) {
             return makeDefsBlock(Structures.listTermsUsed(expr)(Data_List_Types.Nil.value)) + termToSTLCDefs(expr)(TypeSystem.emptyEnv);
@@ -660,13 +629,13 @@ var makeSTLCDefs = function (expr) {
         if (v instanceof Data_Maybe.Nothing) {
             return "Erro de Tipo";
         };
-        throw new Error("Failed pattern match at CompileSTLC (line 485, column 25 - line 487, column 54): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at CompileSTLC (line 474, column 25 - line 476, column 54): " + [ v.constructor.name ]);
     };
     return "N\xe3o \xe9 poss\xedvel representar subtra\xe7\xe3o ou compara\xe7\xf5es entre naturais em STLC. ";
 };
 var makeSTLCSimple = function (expr) {
-    var $360 = canMakeSTLC(expr);
-    if ($360) {
+    var $351 = canMakeSTLC(expr);
+    if ($351) {
         var v = TypeSystem.typeInfer(TypeSystem.emptyEnv)(expr);
         if (v instanceof Data_Maybe.Just) {
             return termToSTLCSimple(expr)(TypeSystem.emptyEnv);
@@ -674,7 +643,7 @@ var makeSTLCSimple = function (expr) {
         if (v instanceof Data_Maybe.Nothing) {
             return "Erro de Tipo";
         };
-        throw new Error("Failed pattern match at CompileSTLC (line 493, column 25 - line 495, column 54): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at CompileSTLC (line 482, column 25 - line 484, column 54): " + [ v.constructor.name ]);
     };
     return "Para gerar STLC simples os seletores de if s\xf3 podem conter express\xf5es l\xf3gicas.\x0aN\xe3o \xe9 poss\xedvel representar subtra\xe7\xe3o ou compara\xe7\xf5es entre naturais em STLC. ";
 };
@@ -686,7 +655,6 @@ export {
     makeIfSTLC,
     makePairSTLC,
     termToSTLC,
-    lastType,
     termToSTLCSimple,
     termToSTLCDefs,
     makeDefSTLC,
