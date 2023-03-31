@@ -111,6 +111,8 @@ typeInfer env expr = case expr of
                                     _ -> Nothing ) 
                             else Nothing 
 
+    T_error -> Nothing
+
     -- _ -> Nothing
 
 

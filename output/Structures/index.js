@@ -314,6 +314,13 @@ var T_var_system = /* #__PURE__ */ (function () {
     };
     return T_var_system;
 })();
+var T_error = /* #__PURE__ */ (function () {
+    function T_error() {
+
+    };
+    T_error.value = new T_error();
+    return T_error;
+})();
 var showUnop = {
     show: function (v) {
         if (v instanceof Negate) {
@@ -322,7 +329,7 @@ var showUnop = {
         if (v instanceof Not) {
             return "~";
         };
-        throw new Error("Failed pattern match at Structures (line 100, column 1 - line 102, column 17): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at Structures (line 104, column 1 - line 106, column 17): " + [ v.constructor.name ]);
     }
 };
 var show = /* #__PURE__ */ Data_Show.show(showUnop);
@@ -339,7 +346,7 @@ var showType = function (t) {
     if (t instanceof Func) {
         return "(" + (showType(t.value0) + (" -> " + (showType(t.value1) + ")")));
     };
-    throw new Error("Failed pattern match at Structures (line 82, column 14 - line 86, column 77): " + [ t.constructor.name ]);
+    throw new Error("Failed pattern match at Structures (line 86, column 14 - line 90, column 77): " + [ t.constructor.name ]);
 };
 var showType$prime = {
     show: showType
@@ -376,7 +383,7 @@ var showBinop = {
         if (v instanceof And) {
             return " && ";
         };
-        throw new Error("Failed pattern match at Structures (line 88, column 1 - line 98, column 20): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at Structures (line 92, column 1 - line 102, column 20): " + [ v.constructor.name ]);
     }
 };
 var show1 = /* #__PURE__ */ Data_Show.show(showBinop);
@@ -429,7 +436,10 @@ var showTerm = function (t) {
     if (t instanceof T_var_system) {
         return "(_var " + (t.value0 + ")");
     };
-    throw new Error("Failed pattern match at Structures (line 52, column 14 - line 77, column 60): " + [ t.constructor.name ]);
+    if (t instanceof T_error) {
+        return "ERRO";
+    };
+    throw new Error("Failed pattern match at Structures (line 54, column 14 - line 81, column 30): " + [ t.constructor.name ]);
 };
 var showTerm$prime = {
     show: showTerm
@@ -631,6 +641,9 @@ var eqTerm = {
             if (x instanceof T_var_system && y instanceof T_var_system) {
                 return x.value0 === y.value0;
             };
+            if (x instanceof T_error && y instanceof T_error) {
+                return true;
+            };
             return false;
         };
     }
@@ -668,6 +681,7 @@ export {
     T_let,
     T_func_system,
     T_var_system,
+    T_error,
     showTerm,
     showType,
     makeNatural,

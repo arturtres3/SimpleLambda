@@ -288,7 +288,10 @@ var typeInfer = function (env) {
             };
             return Data_Maybe.Nothing.value;
         };
-        throw new Error("Failed pattern match at TypeSystem (line 44, column 22 - line 112, column 41): " + [ expr.constructor.name ]);
+        if (expr instanceof Structures.T_error) {
+            return Data_Maybe.Nothing.value;
+        };
+        throw new Error("Failed pattern match at TypeSystem (line 44, column 22 - line 114, column 23): " + [ expr.constructor.name ]);
     };
 };
 var emptyEnv = /* #__PURE__ */ (function () {
@@ -304,7 +307,7 @@ var typeCheck = function (expr) {
     if (v instanceof Data_Maybe.Nothing) {
         return "Invalid Type";
     };
-    throw new Error("Failed pattern match at TypeSystem (line 118, column 18 - line 120, column 30): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at TypeSystem (line 120, column 18 - line 122, column 30): " + [ v.constructor.name ]);
 };
 var a = /* #__PURE__ */ (function () {
     return new Data_List_Types.Cons(new Data_Tuple.Tuple("tst", Structures.Nat.value), new Data_List_Types.Cons(new Data_Tuple.Tuple("tst1", Structures.Bool.value), new Data_List_Types.Cons(new Data_Tuple.Tuple("mult", new Structures.Func(Structures.Nat.value, Structures.Nat.value)), Data_List_Types.Nil.value)));

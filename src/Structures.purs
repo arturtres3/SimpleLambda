@@ -26,7 +26,7 @@ data Term   = T_true
             | T_binop BinopCode Term Term
             | T_unop UnopCode Term
 
-            | T_natRec Term Term Term -- natRec n : shiftInc : (0,0)
+            | T_natRec Term Term Term
             | T_var Ident
             | T_func Ident TermType Term
             | T_app Term Term
@@ -34,6 +34,8 @@ data Term   = T_true
 
             | T_func_system Ident TermType Term
             | T_var_system Ident
+
+            | T_error
 
 instance showTerm' :: Show Term where
     show = showTerm 
@@ -75,6 +77,8 @@ showTerm t = case t of
 
             T_func_system ident t1 e1 -> "(_func " <> ident <> " " <> showType t1 <> " " <> showTerm e1 <> ")"
             T_var_system indent-> "(_var " <> indent <> ")" 
+
+            T_error -> "ERRO" 
 
 
 

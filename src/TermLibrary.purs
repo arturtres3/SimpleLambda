@@ -13,9 +13,8 @@ shiftIncTerm = (T_func_system "p" (Pair Nat Nat)
 
 predTerm :: Term 
 predTerm  = (T_func_system "n" Nat 
-                (T_fst (
-                        (T_natRec (T_var_system "n") shiftIncTerm (T_pair (T_num 0) (T_num 0)))
-                    )
+                (T_fst 
+                    (T_natRec (T_var_system "n") shiftIncTerm (T_pair (T_num 0) (T_num 0)))
                 )   
             )
 

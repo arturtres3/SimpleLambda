@@ -302,9 +302,9 @@ makeDefsBlock l =  "typedef\n"
 makeL2 :: Term → String
 makeL2 expr = case typeInfer emptyEnv expr of 
                     Just _ -> termToL2 expr emptyEnv
-                    Nothing -> "Erro de Tipo"
+                    Nothing -> if (expr == T_error) then "Sintaxe Incorreta" else "Erro de Tipo"
 
 makeL2Defs :: Term → String
 makeL2Defs expr = case typeInfer emptyEnv expr of 
                     Just _ -> makeDefsBlock (listTermsUsed expr Nil) <> termToL2Defs expr emptyEnv
-                    Nothing -> "Erro de Tipo"
+                    Nothing -> if (expr == T_error) then "Sintaxe Incorreta" else "Erro de Tipo"

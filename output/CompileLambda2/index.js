@@ -1,9 +1,11 @@
+import * as Data_Eq from "../Data.Eq/index.js";
 import * as Data_Int from "../Data.Int/index.js";
 import * as Data_List_Types from "../Data.List.Types/index.js";
 import * as Data_Maybe from "../Data.Maybe/index.js";
 import * as Structures from "../Structures/index.js";
 import * as TermLibrary from "../TermLibrary/index.js";
 import * as TypeSystem from "../TypeSystem/index.js";
+var eq = /* #__PURE__ */ Data_Eq.eq(Structures.eqTerm);
 var makeTypesL2Defs = function (t) {
     if (t instanceof Data_Maybe.Just && t.value0 instanceof Structures.Bool) {
         return "Bool";
@@ -218,9 +220,13 @@ var makeL2 = function (expr) {
         return termToL2(expr)(TypeSystem.emptyEnv);
     };
     if (v instanceof Data_Maybe.Nothing) {
+        var $151 = eq(expr)(Structures.T_error.value);
+        if ($151) {
+            return "Sintaxe Incorreta";
+        };
         return "Erro de Tipo";
     };
-    throw new Error("Failed pattern match at CompileLambda2 (line 303, column 15 - line 305, column 46): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at CompileLambda2 (line 303, column 15 - line 305, column 97): " + [ v.constructor.name ]);
 };
 var makeDefL2 = function (str) {
     if (str === "true") {
@@ -300,9 +306,13 @@ var makeL2Defs = function (expr) {
         return makeDefsBlock(Structures.listTermsUsed(expr)(Data_List_Types.Nil.value)) + termToL2Defs(expr)(TypeSystem.emptyEnv);
     };
     if (v instanceof Data_Maybe.Nothing) {
+        var $158 = eq(expr)(Structures.T_error.value);
+        if ($158) {
+            return "Sintaxe Incorreta";
+        };
         return "Erro de Tipo";
     };
-    throw new Error("Failed pattern match at CompileLambda2 (line 308, column 19 - line 310, column 46): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at CompileLambda2 (line 308, column 19 - line 310, column 97): " + [ v.constructor.name ]);
 };
 export {
     makeTypesL2,

@@ -38,10 +38,8 @@ var whiteSpace = /* #__PURE__ */ (function () {
 var reservedOp = /* #__PURE__ */ (function () {
     return Tokens.token.reservedOp;
 })();
-
-// <|> expr ENTRA EM LOOP
 var table = /* #__PURE__ */ (function () {
-    return [ [ new Parsing_Expr.Prefix(voidLeft(reservedOp("!"))(Structures.T_unop.create(Structures.Not.value))), new Parsing_Expr.Prefix(voidLeft(reservedOp("-"))(Structures.T_unop.create(Structures.Negate.value))) ], [ new Parsing_Expr.Infix(voidLeft(reservedOp("*"))(Structures.T_binop.create(Structures.Mult.value)), Parsing_Expr.AssocLeft.value) ], [ new Parsing_Expr.Infix(voidLeft(reservedOp("+"))(Structures.T_binop.create(Structures.Add.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("-"))(Structures.T_binop.create(Structures.Sub.value)), Parsing_Expr.AssocLeft.value) ], [ new Parsing_Expr.Infix(voidLeft(reservedOp("<"))(Structures.T_binop.create(Structures.Lt.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp(">"))(Structures.T_binop.create(Structures.Gt.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("=="))(Structures.T_binop.create(Structures.Eq.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("!="))(Structures.T_binop.create(Structures.Ne.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("&&"))(Structures.T_binop.create(Structures.And.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("||"))(Structures.T_binop.create(Structures.Or.value)), Parsing_Expr.AssocLeft.value) ], [ new Parsing_Expr.Infix(voidLeft(whiteSpace)(Structures.T_app.create), Parsing_Expr.AssocLeft.value) ], [ new Parsing_Expr.Infix(voidLeft(reservedOp(","))(Structures.T_pair.create), Parsing_Expr.AssocLeft.value) ] ];
+    return [ [ new Parsing_Expr.Prefix(voidLeft(reservedOp("!"))(Structures.T_unop.create(Structures.Not.value))) ], [ new Parsing_Expr.Infix(voidLeft(reservedOp("*"))(Structures.T_binop.create(Structures.Mult.value)), Parsing_Expr.AssocLeft.value) ], [ new Parsing_Expr.Infix(voidLeft(reservedOp("+"))(Structures.T_binop.create(Structures.Add.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("-"))(Structures.T_binop.create(Structures.Sub.value)), Parsing_Expr.AssocLeft.value) ], [ new Parsing_Expr.Infix(voidLeft(reservedOp("<"))(Structures.T_binop.create(Structures.Lt.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp(">"))(Structures.T_binop.create(Structures.Gt.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("=="))(Structures.T_binop.create(Structures.Eq.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("!="))(Structures.T_binop.create(Structures.Ne.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("&&"))(Structures.T_binop.create(Structures.And.value)), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("||"))(Structures.T_binop.create(Structures.Or.value)), Parsing_Expr.AssocLeft.value) ], [ new Parsing_Expr.Infix(voidLeft(whiteSpace)(Structures.T_app.create), Parsing_Expr.AssocLeft.value) ], [ new Parsing_Expr.Infix(voidLeft(reservedOp(","))(Structures.T_pair.create), Parsing_Expr.AssocLeft.value) ] ];
 })();
 var tableType = /* #__PURE__ */ (function () {
     return [ [ new Parsing_Expr.Infix(voidLeft(reservedOp("X"))(Structures.Pair.create), Parsing_Expr.AssocLeft.value), new Parsing_Expr.Infix(voidLeft(reservedOp("->"))(Structures.Func.create), Parsing_Expr.AssocRight.value) ] ];
@@ -168,7 +166,7 @@ var $lazy_parseSnd = /* #__PURE__ */ $runtime_lazy("parseSnd", "TokenParser", fu
         return map(Structures.T_snd.create)($lazy_expr(116));
     });
 });
-var expr = /* #__PURE__ */ $lazy_expr(150);
+var expr = /* #__PURE__ */ $lazy_expr(147);
 var parseFst = /* #__PURE__ */ $lazy_parseFst(108);
 var parseFunc = /* #__PURE__ */ $lazy_parseFunc(60);
 var parseIf = /* #__PURE__ */ $lazy_parseIf(98);
@@ -183,12 +181,12 @@ var parseExpr = /* #__PURE__ */ discard(/* #__PURE__ */ Parsing_Combinators.opti
 var getTerm = function (inputText) {
     var v = Parsing.runParser(inputText)(parseExpr);
     if (v instanceof Data_Either.Left) {
-        return Structures.T_false.value;
+        return Structures.T_error.value;
     };
     if (v instanceof Data_Either.Right) {
         return v.value0;
     };
-    throw new Error("Failed pattern match at TokenParser (line 180, column 21 - line 182, column 35): " + [ v.constructor.name ]);
+    throw new Error("Failed pattern match at TokenParser (line 177, column 21 - line 179, column 35): " + [ v.constructor.name ]);
 };
 export {
     parens,

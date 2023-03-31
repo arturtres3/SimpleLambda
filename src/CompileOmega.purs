@@ -303,13 +303,13 @@ makeDefsBlock l =  "typedef\n"
 makeLOmega :: Term → String
 makeLOmega expr = case typeInfer emptyEnv expr of 
                     Just _ -> termToOmega expr emptyEnv
-                    Nothing -> "Erro de Tipo"
+                    Nothing -> if (expr == T_error) then "Sintaxe Incorreta" else "Erro de Tipo"
 
 
 makeLOmegaDefs :: Term → String
 makeLOmegaDefs expr = case typeInfer emptyEnv expr of 
                     Just _ -> makeDefsBlock (listTermsUsed expr Nil) <> termToOmegaDefs expr emptyEnv
-                    Nothing -> "Erro de Tipo"
+                    Nothing -> if (expr == T_error) then "Sintaxe Incorreta" else "Erro de Tipo"
 
 
 

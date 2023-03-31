@@ -127,14 +127,11 @@ parseTerm p = parens p
             <|> parseFst
             <|> parseSnd
             <|> parseNatRec
-            -- <|> expr ENTRA EM LOOP
 
 table :: OperatorTable Identity String Term
 table =
-  [ [ Prefix (reservedOp "!" $> T_unop Not) 
-    , Prefix (reservedOp "-" $> T_unop Negate)]
-  , [ --Infix (reservedOp "/"  $> T_binop Div)  AssocLeft    -- não gera código para div
-      Infix (reservedOp "*"  $> T_binop Mult) AssocLeft]
+  [ [ Prefix (reservedOp "!" $> T_unop Not)]
+  , [ Infix (reservedOp "*"  $> T_binop Mult) AssocLeft]
   , [ Infix (reservedOp "+"  $> T_binop Add)  AssocLeft
     , Infix (reservedOp "-"  $> T_binop Sub)  AssocLeft]
   , [ Infix (reservedOp "<"  $> T_binop Lt)   AssocLeft
@@ -178,7 +175,7 @@ typeNote = fix allTypes
 
 getTerm ∷ String → Term
 getTerm inputText = case (runParser inputText parseExpr) of
-                      Left _ -> T_false
+                      Left _ -> T_error
                       Right x -> x
 
 -- runParser "let x:Nat->Bool->Nat = func (a:Nat; b:Bool) = (if true then a else b) in x" expr

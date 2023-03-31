@@ -16,13 +16,13 @@ languageDef = LanguageDef
   , commentEnd: "-}"
   , commentLine: "--"
   , nestedComments: false
-  , identStart: lower -- variaveis comecam com minuscula 
+  , identStart: lower
   , identLetter: alphaNum <|> (char '_')
-  , opStart: oneOf ['-', ':', '+', '*', '|', '=', '~', '<', ' ', 'X'] -- , '/'
+  , opStart: oneOf ['-', ':', '+', '*', '|', '=', '~', '<', ' ', 'X']
   , opLetter: oneOf ['=', '|']
   , reservedNames: ["true", "false", "if", "then", "else", "fst", "snd", "let", "in", "func", "Nat", "Bool", "natRec"]
   , caseSensitive: true
-  , reservedOpNames: ["=", "+", "-", "*", "||", "=", "~", "<", ":", "<-", "X"] --, "/"
+  , reservedOpNames: ["=", "+", "-", "*", "||", "=", "~", "<", ":", "<-", "X"] 
 }
 
 token :: TokenParser

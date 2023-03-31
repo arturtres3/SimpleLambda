@@ -295,9 +295,9 @@ makeDefsBlock l =  "let\n"
 makeLC :: Term → String
 makeLC expr = case typeInfer emptyEnv expr of 
                     Just _ -> termToLC expr emptyEnv
-                    Nothing -> "Erro de Tipo"
+                    Nothing -> if (expr == T_error) then "Sintaxe Incorreta" else "Erro de Tipo"
 
 makeLCDefs :: Term → String
 makeLCDefs expr = case typeInfer emptyEnv expr of 
                     Just _ -> makeDefsBlock (listTermsUsed expr Nil) <> termToLCDefs expr emptyEnv
-                    Nothing -> "Erro de Tipo"
+                    Nothing -> if (expr == T_error) then "Sintaxe Incorreta" else "Erro de Tipo"

@@ -171,9 +171,13 @@ termToSTLC expr t env = case expr of
                                  <> termToSTLC e1 t env <> " "
                                  <> termToSTLC e2 t env <> ")"
 
-            T_natRec e1 e2 e3 -> "(" <> termToSTLCSimple e1 env <> " "
-                                 <> termToSTLCSimple e2 env <> " "
-                                 <> termToSTLCSimple e3 env <> ")"
+            T_natRec e1 e2 e3 -> case e1 of 
+                                    T_num n -> "( (\\f:" <> typesSTLC (typeInfer env e2)
+                                                    <> ".\\x:" <> typesSTLC (typeInfer env e3) <>"." 
+                                                    <> (makeNatural n) <>") "
+                                                    <> termToSTLC e2 t env <> " "
+                                                    <> termToSTLC e3 t env <> ")"
+                                    _ -> " [Primeiro termo de natRec deve ser um numeral] "
                                  
             _ -> "incompleto"
 
@@ -381,6 +385,7 @@ canMakeSTLCSimple :: Term -> Boolean
 canMakeSTLCSimple expr = case expr of 
             T_true  -> true
             T_false -> true
+            T_error -> true
             T_num _ -> true
             T_var _ -> true
             T_var_system _ -> true
@@ -409,6 +414,7 @@ validIfSelector :: Term -> Boolean
 validIfSelector expr = case expr of 
             T_true  -> true
             T_false -> true
+            T_error -> true
             T_num _ -> true
             T_var _ -> false
             T_var_system _ -> false
@@ -437,6 +443,7 @@ canMakeSTLC :: Term -> Boolean
 canMakeSTLC expr = case expr of 
             T_true  -> true
             T_false -> true
+            T_error -> true
             T_num _ -> true
             T_var _ -> true
             T_var_system _ -> true
@@ -465,7 +472,7 @@ makeSTLC :: Term -> String
 makeSTLC expr = if canMakeSTLC expr then 
                     case typeInfer emptyEnv expr of 
                         Just _ -> termToSTLC expr Nothing emptyEnv
-                        Nothing -> "Erro de Tipo"
+                        Nothing -> if (expr == T_error) then "Sintaxe Incorreta" else "Erro de Tipo"
                 else
                     "O termo seletor do if não pode conter variáveis.\nNão é possível representar subtração ou comparações entre naturais em STLC."
 
@@ -473,7 +480,7 @@ makeSTLCDefs :: Term -> String
 makeSTLCDefs expr = if canMakeSTLC expr then 
                         case typeInfer emptyEnv expr of 
                             Just _ -> makeDefsBlock (listTermsUsed expr Nil) <> termToSTLCDefs expr emptyEnv
-                            Nothing -> "Erro de Tipo"
+                            Nothing -> if (expr == T_error) then "Sintaxe Incorreta" else "Erro de Tipo"
                     else
                         "Não é possível representar subtração ou comparações entre naturais em STLC. "
 
@@ -481,6 +488,6 @@ makeSTLCSimple :: Term -> String
 makeSTLCSimple expr = if canMakeSTLC expr then 
                         case typeInfer emptyEnv expr of 
                             Just _ -> termToSTLCSimple expr emptyEnv
-                            Nothing -> "Erro de Tipo"
+                            Nothing -> if (expr == T_error) then "Sintaxe Incorreta" else "Erro de Tipo"
                     else
                         "Para gerar STLC simples os seletores de if só podem conter expressões lógicas.\nNão é possível representar subtração ou comparações entre naturais em STLC. "
