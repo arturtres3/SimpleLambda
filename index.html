@@ -56,10 +56,10 @@ let b:Nat = 2 in
 let double:Nat->Nat = func (n:Nat) = n*2 in 
 
 -- let fib_step : (Nat X Nat) -> (Nat X Nat) = 
--- func (p:Nat X Nat) = ((snd p), (fst p) + (snd p)) in 
+-- func (p:Nat X Nat) => ((snd p), (fst p) + (snd p)) in 
 
--- let fibonacci : Nat -> Nat = func (n:Nat) = 
--- fst (natRec (n ; fib_step ; (0,1)) )  in 
+-- let fibonacci : Nat -> Nat = 
+-- func (n:Nat) => fst (natRec (n ; fib_step ; (0,1)) )  in 
     
 double (if (!true || true) then a else b)
         </textarea>

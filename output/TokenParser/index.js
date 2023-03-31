@@ -116,7 +116,7 @@ var $lazy_parseFst = /* #__PURE__ */ $runtime_lazy("parseFst", "TokenParser", fu
 var $lazy_parseFunc = /* #__PURE__ */ $runtime_lazy("parseFunc", "TokenParser", function () {
     return discard(reserved("func"))(function () {
         return bind(parens(parseManyParams))(function (list) {
-            return discard(reservedOp("="))(function () {
+            return discard(reservedOp("=>"))(function () {
                 return bind($lazy_expr(65))(function (e1) {
                     return pure(makeFunc(list)(e1));
                 });

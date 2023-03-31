@@ -61,7 +61,7 @@ parseFunc :: P Term
 parseFunc = (do 
             reserved "func"
             list <- parens parseManyParams
-            reservedOp "="
+            reservedOp "=>"
             e1 <- expr -- parens (expr)
             pure (makeFunc list e1)
             )

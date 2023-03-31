@@ -11,10 +11,10 @@ var languageDef = {
     identStart: Parsing_String_Basic.lower,
     identLetter: /* #__PURE__ */ Control_Alt.alt(Parsing.altParserT)(Parsing_String_Basic.alphaNum)(/* #__PURE__ */ Parsing_String["char"]("_")),
     opStart: /* #__PURE__ */ Parsing_String_Basic.oneOf([ "-", ":", "+", "*", "|", "=", "~", "<", " ", "X" ]),
-    opLetter: /* #__PURE__ */ Parsing_String_Basic.oneOf([ "=", "|" ]),
+    opLetter: /* #__PURE__ */ Parsing_String_Basic.oneOf([ "=", "|", "&", ">" ]),
     reservedNames: [ "true", "false", "if", "then", "else", "fst", "snd", "let", "in", "func", "Nat", "Bool", "natRec" ],
     caseSensitive: true,
-    reservedOpNames: [ "=", "+", "-", "*", "||", "=", "~", "<", ":", "<-", "X" ]
+    reservedOpNames: [ "=", "+", "-", "*", "||", "&&", "=", "=>", "~", "<", ">", ":", "<-", "X" ]
 };
 var token = /* #__PURE__ */ Parsing_Token.makeTokenParser(languageDef);
 export {
