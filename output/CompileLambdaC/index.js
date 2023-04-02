@@ -14,7 +14,7 @@ var makeTypesLCDefs = function (t) {
         return "Nat";
     };
     if (t instanceof Data_Maybe.Just && t.value0 instanceof Structures.Pair) {
-        return "(And " + (makeTypesLCDefs(new Data_Maybe.Just(t.value0.value0)) + (" " + (makeTypesLCDefs(new Data_Maybe.Just(t.value0.value1)) + ")")));
+        return "(Pair " + (makeTypesLCDefs(new Data_Maybe.Just(t.value0.value0)) + (" " + (makeTypesLCDefs(new Data_Maybe.Just(t.value0.value1)) + ")")));
     };
     if (t instanceof Data_Maybe.Just && t.value0 instanceof Structures.Func) {
         return "(" + (makeTypesLCDefs(new Data_Maybe.Just(t.value0.value0)) + ("->" + (makeTypesLCDefs(new Data_Maybe.Just(t.value0.value1)) + ")")));
@@ -242,10 +242,10 @@ var makeDefLC = function (str) {
         return "  pair    = \\A:*. \\B:*. \\a: A. \\b: B. \\C:*. \\f: A->B->C. f a b;";
     };
     if (str === "fst") {
-        return "  fst     = \\A:*. \\B:*. \\p: And A B. p A (\\a: A.\\b: B. a);";
+        return "  fst     = \\A:*. \\B:*. \\p: Pair A B. p A (\\a: A.\\b: B. a);";
     };
     if (str === "snd") {
-        return "  snd     = \\A:*. \\B:*. \\p: And A B. p B (\\a: A.\\b: B. b);";
+        return "  snd     = \\A:*. \\B:*. \\p: Pair A B. p B (\\a: A.\\b: B. b);";
     };
     if (str === "add") {
         return "  add     = \\n: Nat. \\m: Nat. \\C:*. \\f: C -> C. \\x :C. m C f (n C f x);";
@@ -266,7 +266,7 @@ var makeDefLC = function (str) {
         return "  succ    = \\n: Nat. \\C:*. \\f: C -> C. \\x :C. f (n C f x);";
     };
     if (str === "sub") {
-        return "  sub     = \\n: Nat. \\m:Nat. m Nat (\\n: Nat. fst Nat Nat (n (And Nat Nat) (\\p: And Nat Nat. (pair Nat Nat (snd Nat Nat p) (succ (snd Nat Nat p)))) (pair Nat Nat 0 0))) n;";
+        return "  sub     = \\n: Nat. \\m:Nat. m Nat (\\n: Nat. fst Nat Nat (n (Pair Nat Nat) (\\p: Pair Nat Nat. (pair Nat Nat (snd Nat Nat p) (succ (snd Nat Nat p)))) (pair Nat Nat 0 0))) n;";
     };
     if (str === "isZero") {
         return "  isZero  = \\n:Nat. n Bool (\\b: Bool. (\\C:*. \\a: C. \\b: C. b)) (\\C:*. \\a: C. \\b: C. a);";
@@ -298,7 +298,7 @@ var makeDefsUsed = function (v) {
     throw new Error("Failed pattern match at CompileLambdaC (line 280, column 1 - line 280, column 40): " + [ v.constructor.name ]);
 };
 var makeDefsBlock = function (l) {
-    return "let\x0a" + ("  Bool          = ||C:*. C -> C -> C;\x0a" + ("  Nat           = ||C:*. (C -> C) -> C -> C;\x0a" + ("  And           = \\A:*. \\B:*. ||C:*. (A -> B -> C) -> C;\x0a" + ("  Or            = \\A:*. \\B:*. ||C:*. (A -> C) -> (B -> C) -> C;\x0a\x0a" + (makeDefsUsed(l) + "in\x0a\x0a")))));
+    return "let\x0a" + ("  Bool    = ||C:*. C -> C -> C;\x0a" + ("  Nat     = ||C:*. (C -> C) -> C -> C;\x0a" + ("  Pair    = \\A:*. \\B:*. ||C:*. (A -> B -> C) -> C;\x0a\x0a" + (makeDefsUsed(l) + "in\x0a\x0a"))));
 };
 var makeLCDefs = function (expr) {
     var v = TypeSystem.typeInfer(TypeSystem.emptyEnv)(expr);

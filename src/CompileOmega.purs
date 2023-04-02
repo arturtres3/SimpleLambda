@@ -28,7 +28,7 @@ makeTypesOmegaDefs t = case t of
                 Just Bool -> "Bool"
                 Just Nat  -> "Nat"
 
-                Just (Pair t1 t2) -> "(And " 
+                Just (Pair t1 t2) -> "(Pair " 
                                       <> makeTypesOmegaDefs (Just t1) <> " "
                                       <> makeTypesOmegaDefs (Just t2) <> 
                                       ")"
@@ -256,8 +256,8 @@ makeDefOmega str = case str of
     "false" -> "  false   = \\\\C:*. \\a: C. \\b: C. b;"
     "if"    -> "  if      = \\\\D:*. \\c: Bool. \\a: D. \\b: D. c [D] a b;"
     "pair"  -> "  pair    = \\\\A:*. \\\\B:*. \\a: A. \\b: B. \\\\C:*. \\f: A->B->C. f a b;"
-    "fst"   -> "  fst     = \\\\A:*. \\\\B:*. \\p: And A B. p [A] (\\a: A.\\b: B. a);"
-    "snd"   -> "  snd     = \\\\A:*. \\\\B:*. \\p: And A B. p [B] (\\a: A.\\b: B. b);"
+    "fst"   -> "  fst     = \\\\A:*. \\\\B:*. \\p: Pair A B. p [A] (\\a: A.\\b: B. a);"
+    "snd"   -> "  snd     = \\\\A:*. \\\\B:*. \\p: Pair A B. p [B] (\\a: A.\\b: B. b);"
 
     "add"   -> "  add     = \\n: Nat. \\m: Nat. \\\\C:*. \\f: C -> C. \\x :C. m [C] f (n [C] f x);"
     "mult"  -> "  mult    = \\n: Nat. \\m: Nat. \\\\C:*. \\f: C -> C. \\x :C. n [C] (m [C] f) x;"
@@ -266,7 +266,7 @@ makeDefOmega str = case str of
     "not"   -> "  not     = \\a: Bool. a [Bool] (\\\\C:*. \\a: C. \\b: C. b) (\\\\C:*. \\a: C. \\b: C. a);"
 
     "succ"  -> "  succ    = \\n: Nat. \\\\C:*. \\f: C -> C. \\x :C. f (n [C] f x);"
-    "sub"   -> "  sub     = \\n: Nat. \\m:Nat. m [Nat] (\\n: Nat. fst [Nat] [Nat] (n [And Nat Nat] (\\p: And Nat Nat. (pair [Nat] [Nat] (snd [Nat] [Nat] p) (succ (snd [Nat] [Nat] p)))) (pair [Nat] [Nat] 0 0))) n;"
+    "sub"   -> "  sub     = \\n: Nat. \\m:Nat. m [Nat] (\\n: Nat. fst [Nat] [Nat] (n [Pair Nat Nat] (\\p: Pair Nat Nat. (pair [Nat] [Nat] (snd [Nat] [Nat] p) (succ (snd [Nat] [Nat] p)))) (pair [Nat] [Nat] 0 0))) n;"
 
     "isZero"-> "  isZero  = \\n:Nat. n [Bool] (\\b: Bool. (\\\\C:*. \\a: C. \\b: C. b)) (\\\\C:*. \\a: C. \\b: C. a);"
 
@@ -288,10 +288,10 @@ makeDefsUsed (str : tail) = makeDefOmega str <> "\n" <> makeDefsUsed tail
 
 makeDefsBlock :: (List String) -> String 
 makeDefsBlock l =  "typedef\n"
-    <>   "  Bool          = forall C:*, C -> C -> C;\n"
-    <>   "  Nat           = forall C:*, (C -> C) -> C -> C;\n"
-    <>   "  And           = \\A:*, \\B:*, forall C:*, (A -> B -> C) -> C;\n"
-    <>   "  Or            = \\A:*, \\B:*, forall C:*, (A -> C) -> (B -> C) -> C;\n"
+    <>   "  Bool    = forall C:*, C -> C -> C;\n"
+    <>   "  Nat     = forall C:*, (C -> C) -> C -> C;\n"
+    <>   "  Pair    = \\A:*, \\B:*, forall C:*, (A -> B -> C) -> C;\n"
+    -- <>   "  Or            = \\A:*, \\B:*, forall C:*, (A -> C) -> (B -> C) -> C;\n"
     <> "end\n"
     <> "let\n"
 
