@@ -12,8 +12,8 @@ data TermType   = Nat
                 | Pair TermType TermType
                 | Func TermType TermType
 
-data BinopCode = Add | Sub | Mult | Div | Lt | Gt | Eq | Ne | And | Or
-data UnopCode = Not | Negate
+data BinopCode = Add | Sub | Mult | Lt | Gt | Eq | Ne | And | Or
+data UnopCode = Not -- | Negate
 
 data Term   = T_true
             | T_false
@@ -93,7 +93,7 @@ instance showBinop :: Show BinopCode where
   show Add = " + "
   show Sub = " - "
   show Mult = "*"
-  show Div = "/"
+  -- show Div = "/"
   show Lt = " < "
   show Gt = " > "
   show Eq = " == "
@@ -102,7 +102,7 @@ instance showBinop :: Show BinopCode where
   show And = " && "
 
 instance showUnop :: Show UnopCode where
-  show Negate = "-"
+  -- show Negate = "-"
   show Not = "~"
 
 
@@ -129,7 +129,7 @@ listTermsUsed expr l = case expr of
     T_binop Add e1 e2  -> union (union (union ("add" :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
     T_binop And e1 e2  -> union (union (union ("and" :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
     T_binop Or  e1 e2  -> union (union (union ("or"  :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
-    T_binop Div e1 e2  -> union (union (union ("div" :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
+    -- T_binop Div e1 e2  -> union (union (union ("div" :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
     T_binop Mult e1 e2 -> union (union (union ("mult":Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
 
     T_binop Eq  e1 e2  -> union (union (union ("isZero":"pair":"fst":"snd":"succ":"sub":"and":"eq"  :Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
@@ -139,3 +139,8 @@ listTermsUsed expr l = case expr of
 
     T_binop Sub e1 e2  -> union (union (union ("pair":"fst":"snd":"succ":"sub":Nil) l) (listTermsUsed e1 l)) (listTermsUsed e2 l )
     _                  -> l
+
+
+makeDefsUsed :: (String -> String) -> (List String) -> String 
+makeDefsUsed _ Nil = "\n"
+makeDefsUsed makeDefsFunc (str : tail) = makeDefsFunc str <> "\n" <> makeDefsUsed makeDefsFunc tail

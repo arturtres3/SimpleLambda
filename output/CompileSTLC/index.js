@@ -17,7 +17,7 @@ var validIfSelectorsSimple = function (expr) {
     if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Or) {
         return validIfSelectorsSimple(expr.value1) && validIfSelectorsSimple(expr.value2);
     };
-    if (expr instanceof Structures.T_unop && expr.value0 instanceof Structures.Not) {
+    if (expr instanceof Structures.T_unop) {
         return validIfSelectorsSimple(expr.value1);
     };
     if (expr instanceof Structures.T_true) {
@@ -79,9 +79,6 @@ var validIfSelector = function (expr) {
     if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Lt) {
         return false;
     };
-    if (expr instanceof Structures.T_unop && expr.value0 instanceof Structures.Negate) {
-        return false;
-    };
     if (expr instanceof Structures.T_unop) {
         return validIfSelector(expr.value1);
     };
@@ -100,7 +97,7 @@ var validIfSelector = function (expr) {
     if (expr instanceof Structures.T_natRec) {
         return validIfSelector(expr.value0) && (validIfSelector(expr.value1) && validIfSelector(expr.value2));
     };
-    throw new Error("Failed pattern match at CompileSTLC (line 414, column 24 - line 440, column 96): " + [ expr.constructor.name ]);
+    throw new Error("Failed pattern match at CompileSTLC (line 486, column 24 - line 512, column 96): " + [ expr.constructor.name ]);
 };
 var typesSTLC = function (t) {
     if (t instanceof Data_Maybe.Just && t.value0 instanceof Structures.Bool) {
@@ -113,8 +110,8 @@ var typesSTLC = function (t) {
         return "(" + (typesSTLC(new Data_Maybe.Just(t.value0.value0)) + ("->" + (typesSTLC(new Data_Maybe.Just(t.value0.value1)) + ")")));
     };
     if (t instanceof Data_Maybe.Just && t.value0 instanceof Structures.Pair) {
-        var $80 = notEq(t.value0.value0)(t.value0.value1);
-        if ($80) {
+        var $83 = notEq(t.value0.value0)(t.value0.value1);
+        if ($83) {
             return "Pares devem ter o mesmo tipo";
         };
         var t1String = typesSTLC(new Data_Maybe.Just(t.value0.value0));
@@ -160,8 +157,8 @@ var termToSTLCSimple = function (expr) {
         if (expr instanceof Structures.T_pair) {
             var t1 = TypeSystem.typeInfer(env)(expr.value0);
             var t2 = TypeSystem.typeInfer(env)(expr.value1);
-            var $98 = eq(t1)(t2);
-            if ($98) {
+            var $101 = eq(t1)(t2);
+            if ($101) {
                 return "((\\n1:(A->A)->A->A.\\n2:(A->A)->A->A.\\b:(A->A->A).\\f:A->A.\\x:A. b (n1 f x) (n2 f x)) " + (termToSTLCSimple(expr.value0)(env) + (" " + (termToSTLCSimple(expr.value1)(env) + ")")));
             };
             return "ERRO valores no par devem ser do mesmo tipo";
@@ -169,8 +166,8 @@ var termToSTLCSimple = function (expr) {
         if (expr instanceof Structures.T_fst) {
             var v = TypeSystem.typeInfer(env)(expr.value0);
             if (v instanceof Data_Maybe.Just && v.value0 instanceof Structures.Pair) {
-                var $102 = eq1(v.value0.value0)(v.value0.value1);
-                if ($102) {
+                var $105 = eq1(v.value0.value0)(v.value0.value1);
+                if ($105) {
                     return "((\\p: (A->A->A) -> ((A->A)->A->A). \\f:A->A.\\x:A. (p " + (termToSTLCSimple(Structures.T_true.value)(env) + (") f x)" + (termToSTLCSimple(expr.value0)(env) + ")")));
                 };
                 return "ERRO valores no par devem ser do mesmo tipo";
@@ -180,8 +177,8 @@ var termToSTLCSimple = function (expr) {
         if (expr instanceof Structures.T_snd) {
             var v = TypeSystem.typeInfer(env)(expr.value0);
             if (v instanceof Data_Maybe.Just && v.value0 instanceof Structures.Pair) {
-                var $108 = eq1(v.value0.value0)(v.value0.value1);
-                if ($108) {
+                var $111 = eq1(v.value0.value0)(v.value0.value1);
+                if ($111) {
                     return "((\\p: (A->A->A) -> ((A->A)->A->A). \\f:A->A.\\x:A. (p " + (termToSTLCSimple(Structures.T_false.value)(env) + (") f x)" + (termToSTLCSimple(expr.value0)(env) + ")")));
                 };
                 return "ERRO valores no par devem ser do mesmo tipo";
@@ -212,11 +209,89 @@ var termToSTLCSimple = function (expr) {
         if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Or) {
             return "((\\bin1: (A->A->A). \\bin2: (A->A->A). \\a: A. \\b: A. bin1 a (bin2 a b)) " + (termToSTLCSimple(expr.value1)(env) + (" " + (termToSTLCSimple(expr.value2)(env) + ")")));
         };
-        if (expr instanceof Structures.T_unop && expr.value0 instanceof Structures.Not) {
+        if (expr instanceof Structures.T_unop) {
             return "((\\bin: (A->A->A). \\a: A. \\b: A. bin b a) " + (termToSTLCSimple(expr.value1)(env) + ")");
         };
         if (expr instanceof Structures.T_natRec) {
             return "(" + (termToSTLCSimple(expr.value0)(env) + (" " + (termToSTLCSimple(expr.value1)(env) + (" " + (termToSTLCSimple(expr.value2)(env) + ")")))));
+        };
+        return "incompleto";
+    };
+};
+var termToSTLCDefsNewSim = function (expr) {
+    return function (env) {
+        if (expr instanceof Structures.T_true) {
+            return "true";
+        };
+        if (expr instanceof Structures.T_false) {
+            return "false";
+        };
+        if (expr instanceof Structures.T_var) {
+            return "x_" + expr.value0;
+        };
+        if (expr instanceof Structures.T_if) {
+            return "(if " + (termToSTLCDefsNewSim(expr.value0)(env) + (" " + (termToSTLCDefsNewSim(expr.value1)(env) + (" " + (termToSTLCDefsNewSim(expr.value2)(env) + ")")))));
+        };
+        if (expr instanceof Structures.T_pair) {
+            var t1 = TypeSystem.typeInfer(env)(expr.value0);
+            var t2 = TypeSystem.typeInfer(env)(expr.value1);
+            var $148 = eq(t1)(t2);
+            if ($148) {
+                return "(pair " + (termToSTLCDefsNewSim(expr.value0)(env) + (" " + (termToSTLCDefsNewSim(expr.value1)(env) + ")")));
+            };
+            return "ERRO valores no par devem ser do mesmo tipo";
+        };
+        if (expr instanceof Structures.T_fst) {
+            var v = TypeSystem.typeInfer(env)(expr.value0);
+            if (v instanceof Data_Maybe.Just && v.value0 instanceof Structures.Pair) {
+                var $152 = eq1(v.value0.value0)(v.value0.value1);
+                if ($152) {
+                    return "(fst " + (termToSTLCDefsNewSim(expr.value0)(env) + ")");
+                };
+                return "ERRO valores no par devem ser do mesmo tipo";
+            };
+            return "ERRO de tipo, fst deve receber par";
+        };
+        if (expr instanceof Structures.T_snd) {
+            var v = TypeSystem.typeInfer(env)(expr.value0);
+            if (v instanceof Data_Maybe.Just && v.value0 instanceof Structures.Pair) {
+                var $158 = eq1(v.value0.value0)(v.value0.value1);
+                if ($158) {
+                    return "(snd " + (termToSTLCDefsNewSim(expr.value0)(env) + ")");
+                };
+                return "ERRO valores no par devem ser do mesmo tipo";
+            };
+            return "ERRO de tipo, fst deve receber par";
+        };
+        if (expr instanceof Structures.T_app) {
+            return "(" + (termToSTLCDefsNewSim(expr.value0)(env) + (" " + (termToSTLCDefsNewSim(expr.value1)(env) + ")")));
+        };
+        if (expr instanceof Structures.T_let) {
+            return termToSTLCDefsNewSim(new Structures.T_app(new Structures.T_func(expr.value0, expr.value1, expr.value3), expr.value2))(env);
+        };
+        if (expr instanceof Structures.T_func) {
+            return "(\\x_" + (expr.value0 + (": " + (typesSTLCDefs(new Data_Maybe.Just(expr.value1)) + (". " + (termToSTLCDefsNewSim(expr.value2)(TypeSystem.update(env)(expr.value0)(expr.value1)) + ")")))));
+        };
+        if (expr instanceof Structures.T_num) {
+            return "(\\f:A->A.\\x:A." + (Structures.makeNatural(expr.value0) + ")");
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Add) {
+            return "(add " + (termToSTLCDefsNewSim(expr.value1)(env) + (" " + (termToSTLCDefsNewSim(expr.value2)(env) + ")")));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Mult) {
+            return "(mult " + (termToSTLCDefsNewSim(expr.value1)(env) + (" " + (termToSTLCDefsNewSim(expr.value2)(env) + ")")));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.And) {
+            return "(and " + (termToSTLCDefsNewSim(expr.value1)(env) + (" " + (termToSTLCDefsNewSim(expr.value2)(env) + ")")));
+        };
+        if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Or) {
+            return "(or " + (termToSTLCDefsNewSim(expr.value1)(env) + (" " + (termToSTLCDefsNewSim(expr.value2)(env) + ")")));
+        };
+        if (expr instanceof Structures.T_unop) {
+            return "(not " + (termToSTLCDefsNewSim(expr.value1)(env) + ")");
+        };
+        if (expr instanceof Structures.T_natRec) {
+            return "(natRec " + (termToSTLCDefsNewSim(expr.value0)(env) + (" " + (termToSTLCDefsNewSim(expr.value1)(env) + (" " + (termToSTLCDefsNewSim(expr.value2)(env) + ")")))));
         };
         return "incompleto";
     };
@@ -238,8 +313,8 @@ var termToSTLCDefs = function (expr) {
         if (expr instanceof Structures.T_pair) {
             var t1 = TypeSystem.typeInfer(env)(expr.value0);
             var t2 = TypeSystem.typeInfer(env)(expr.value1);
-            var $145 = eq(t1)(t2);
-            if ($145) {
+            var $195 = eq(t1)(t2);
+            if ($195) {
                 return "(pair " + (termToSTLCDefs(expr.value0)(env) + (" " + (termToSTLCDefs(expr.value1)(env) + ")")));
             };
             return "ERRO valores no par devem ser do mesmo tipo";
@@ -247,8 +322,8 @@ var termToSTLCDefs = function (expr) {
         if (expr instanceof Structures.T_fst) {
             var v = TypeSystem.typeInfer(env)(expr.value0);
             if (v instanceof Data_Maybe.Just && v.value0 instanceof Structures.Pair) {
-                var $149 = eq1(v.value0.value0)(v.value0.value1);
-                if ($149) {
+                var $199 = eq1(v.value0.value0)(v.value0.value1);
+                if ($199) {
                     return "(fst " + (termToSTLCDefs(expr.value0)(env) + ")");
                 };
                 return "ERRO valores no par devem ser do mesmo tipo";
@@ -258,8 +333,8 @@ var termToSTLCDefs = function (expr) {
         if (expr instanceof Structures.T_snd) {
             var v = TypeSystem.typeInfer(env)(expr.value0);
             if (v instanceof Data_Maybe.Just && v.value0 instanceof Structures.Pair) {
-                var $155 = eq1(v.value0.value0)(v.value0.value1);
-                if ($155) {
+                var $205 = eq1(v.value0.value0)(v.value0.value1);
+                if ($205) {
                     return "(snd " + (termToSTLCDefs(expr.value0)(env) + ")");
                 };
                 return "ERRO valores no par devem ser do mesmo tipo";
@@ -290,7 +365,7 @@ var termToSTLCDefs = function (expr) {
         if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Or) {
             return "(or " + (termToSTLCDefs(expr.value1)(env) + (" " + (termToSTLCDefs(expr.value2)(env) + ")")));
         };
-        if (expr instanceof Structures.T_unop && expr.value0 instanceof Structures.Not) {
+        if (expr instanceof Structures.T_unop) {
             return "(not " + (termToSTLCDefs(expr.value1)(env) + ")");
         };
         if (expr instanceof Structures.T_natRec) {
@@ -347,17 +422,11 @@ var makeDefSTLC = function (str) {
     };
     return "?";
 };
-var makeDefsUsed = function (v) {
+var makeDefsBlock = function (v) {
     if (v instanceof Data_List_Types.Nil) {
-        return "\x0a";
+        return "";
     };
-    if (v instanceof Data_List_Types.Cons) {
-        return makeDefSTLC(v.value0) + ("\x0a" + makeDefsUsed(v.value1));
-    };
-    throw new Error("Failed pattern match at CompileSTLC (line 362, column 1 - line 362, column 40): " + [ v.constructor.name ]);
-};
-var makeDefsBlock = function (l) {
-    return "let\x0a" + (makeDefsUsed(l) + "in\x0a\x0a");
+    return "let\x0a" + (Structures.makeDefsUsed(makeDefSTLC)(v) + "in\x0a\x0a");
 };
 var makeBooleanTypeSTLC = function (t) {
     return "(" + (t + ("->" + (t + ("->" + (t + ")")))));
@@ -377,7 +446,7 @@ var termToSTLC = function (expr) {
             if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Or) {
                 return "((\\bin1: " + (makeBooleanTypeSTLC(typesSTLC(t)) + (". " + ("\\bin2: " + (makeBooleanTypeSTLC(typesSTLC(t)) + (". " + ("\\a: " + (typesSTLC(t) + (". " + ("\\b: " + (typesSTLC(t) + (". " + ("bin1 a (bin2 a b)) " + (termToSTLC(expr.value1)(t)(env) + (" " + (termToSTLC(expr.value2)(t)(env) + ")")))))))))))))));
             };
-            if (expr instanceof Structures.T_unop && expr.value0 instanceof Structures.Not) {
+            if (expr instanceof Structures.T_unop) {
                 return "((\\bin: " + (makeBooleanTypeSTLC(typesSTLC(t)) + (". " + ("\\a: " + (typesSTLC(t) + (". " + ("\\b: " + (typesSTLC(t) + (". " + ("bin b a) " + (termToSTLC(expr.value1)(t)(env) + ")"))))))))));
             };
             if (expr instanceof Structures.T_var) {
@@ -409,8 +478,8 @@ var termToSTLC = function (expr) {
             if (expr instanceof Structures.T_pair) {
                 var t1 = TypeSystem.typeInfer(env)(expr.value0);
                 var t2 = TypeSystem.typeInfer(env)(expr.value1);
-                var $219 = eq(t1)(t2);
-                if ($219) {
+                var $267 = eq(t1)(t2);
+                if ($267) {
                     if (t instanceof Data_Maybe.Nothing) {
                         return "(" + (makePairSTLC(typesSTLC(t1)) + (" " + (termToSTLC(expr.value0)(t)(env) + (" " + (termToSTLC(expr.value1)(t)(env) + ")")))));
                     };
@@ -424,8 +493,8 @@ var termToSTLC = function (expr) {
             if (expr instanceof Structures.T_fst) {
                 var v = TypeSystem.typeInfer(env)(expr.value0);
                 if (v instanceof Data_Maybe.Just && v.value0 instanceof Structures.Pair) {
-                    var $225 = eq1(v.value0.value0)(v.value0.value1);
-                    if ($225) {
+                    var $273 = eq1(v.value0.value0)(v.value0.value1);
+                    if ($273) {
                         if (t instanceof Data_Maybe.Just) {
                             return "((\\p: " + (makePairTypeSTLC(makeBooleanTypeSTLC(typesSTLC(new Data_Maybe.Just(t.value0)))) + (". p " + (termToSTLC(Structures.T_true.value)(new Data_Maybe.Just(new Structures.Func(t.value0, new Structures.Func(t.value0, t.value0))))(env) + (")" + (termToSTLC(expr.value0)(new Data_Maybe.Just(t.value0))(env) + ")")))));
                         };
@@ -441,8 +510,8 @@ var termToSTLC = function (expr) {
             if (expr instanceof Structures.T_snd) {
                 var v = TypeSystem.typeInfer(env)(expr.value0);
                 if (v instanceof Data_Maybe.Just && v.value0 instanceof Structures.Pair) {
-                    var $233 = eq1(v.value0.value0)(v.value0.value1);
-                    if ($233) {
+                    var $281 = eq1(v.value0.value0)(v.value0.value1);
+                    if ($281) {
                         if (t instanceof Data_Maybe.Just) {
                             return "((\\p: " + (makePairTypeSTLC(makeBooleanTypeSTLC(typesSTLC(new Data_Maybe.Just(t.value0)))) + (". p " + (termToSTLC(Structures.T_false.value)(new Data_Maybe.Just(new Structures.Func(t.value0, new Structures.Func(t.value0, t.value0))))(env) + (")" + (termToSTLC(expr.value0)(t)(env) + ")")))));
                         };
@@ -526,9 +595,6 @@ var canMakeSTLCSimple = function (expr) {
     if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Lt) {
         return false;
     };
-    if (expr instanceof Structures.T_unop && expr.value0 instanceof Structures.Negate) {
-        return false;
-    };
     if (expr instanceof Structures.T_unop) {
         return canMakeSTLCSimple(expr.value1);
     };
@@ -544,7 +610,7 @@ var canMakeSTLCSimple = function (expr) {
     if (expr instanceof Structures.T_func_system) {
         return canMakeSTLCSimple(expr.value2);
     };
-    throw new Error("Failed pattern match at CompileSTLC (line 385, column 26 - line 410, column 57): " + [ expr.constructor.name ]);
+    throw new Error("Failed pattern match at CompileSTLC (line 457, column 26 - line 482, column 57): " + [ expr.constructor.name ]);
 };
 var canMakeSTLC = function (expr) {
     if (expr instanceof Structures.T_true) {
@@ -598,9 +664,6 @@ var canMakeSTLC = function (expr) {
     if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Lt) {
         return false;
     };
-    if (expr instanceof Structures.T_unop && expr.value0 instanceof Structures.Negate) {
-        return false;
-    };
     if (expr instanceof Structures.T_unop) {
         return canMakeSTLC(expr.value1);
     };
@@ -616,59 +679,113 @@ var canMakeSTLC = function (expr) {
     if (expr instanceof Structures.T_func_system) {
         return canMakeSTLC(expr.value2);
     };
-    throw new Error("Failed pattern match at CompileSTLC (line 443, column 20 - line 468, column 51): " + [ expr.constructor.name ]);
+    throw new Error("Failed pattern match at CompileSTLC (line 515, column 20 - line 540, column 51): " + [ expr.constructor.name ]);
 };
 var makeSTLC = function (expr) {
-    var $348 = canMakeSTLC(expr);
-    if ($348) {
+    var $392 = canMakeSTLC(expr);
+    if ($392) {
         var v = TypeSystem.typeInfer(TypeSystem.emptyEnv)(expr);
         if (v instanceof Data_Maybe.Just) {
             return termToSTLC(expr)(Data_Maybe.Nothing.value)(TypeSystem.emptyEnv);
         };
         if (v instanceof Data_Maybe.Nothing) {
-            var $351 = eq2(expr)(Structures.T_error.value);
-            if ($351) {
+            var $395 = eq2(expr)(Structures.T_error.value);
+            if ($395) {
                 return "Sintaxe Incorreta";
             };
             return "Erro de Tipo";
         };
-        throw new Error("Failed pattern match at CompileSTLC (line 473, column 21 - line 475, column 101): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at CompileSTLC (line 546, column 21 - line 548, column 101): " + [ v.constructor.name ]);
     };
     return "O termo seletor do if n\xe3o pode conter vari\xe1veis.\x0aN\xe3o \xe9 poss\xedvel representar subtra\xe7\xe3o ou compara\xe7\xf5es entre naturais em STLC.";
 };
 var makeSTLCDefs = function (expr) {
-    var $352 = canMakeSTLC(expr);
-    if ($352) {
+    var $396 = canMakeSTLC(expr);
+    if ($396) {
         var v = TypeSystem.typeInfer(TypeSystem.emptyEnv)(expr);
         if (v instanceof Data_Maybe.Just) {
             return makeDefsBlock(Structures.listTermsUsed(expr)(Data_List_Types.Nil.value)) + termToSTLCDefs(expr)(TypeSystem.emptyEnv);
         };
         if (v instanceof Data_Maybe.Nothing) {
-            var $355 = eq2(expr)(Structures.T_error.value);
-            if ($355) {
+            var $399 = eq2(expr)(Structures.T_error.value);
+            if ($399) {
                 return "Sintaxe Incorreta";
             };
             return "Erro de Tipo";
         };
-        throw new Error("Failed pattern match at CompileSTLC (line 481, column 25 - line 483, column 105): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at CompileSTLC (line 554, column 25 - line 556, column 105): " + [ v.constructor.name ]);
     };
     return "N\xe3o \xe9 poss\xedvel representar subtra\xe7\xe3o ou compara\xe7\xf5es entre naturais em STLC. ";
 };
+var makeSTLCDefsNewSim = function (expr) {
+    var $400 = canMakeSTLC(expr);
+    if ($400) {
+        var v = TypeSystem.typeInfer(TypeSystem.emptyEnv)(expr);
+        if (v instanceof Data_Maybe.Just) {
+            return "var\x0a  A:*;\x0aend\x0a" + (makeDefsBlock(Structures.listTermsUsed(expr)(Data_List_Types.Nil.value)) + termToSTLCDefsNewSim(expr)(TypeSystem.emptyEnv));
+        };
+        if (v instanceof Data_Maybe.Nothing) {
+            var $403 = eq2(expr)(Structures.T_error.value);
+            if ($403) {
+                return "Sintaxe Incorreta";
+            };
+            return "Erro de Tipo";
+        };
+        throw new Error("Failed pattern match at CompileSTLC (line 587, column 25 - line 589, column 105): " + [ v.constructor.name ]);
+    };
+    return "N\xe3o \xe9 poss\xedvel representar subtra\xe7\xe3o ou compara\xe7\xf5es entre naturais em STLC. ";
+};
+var makeSTLCNewSim = function (expr) {
+    var $404 = canMakeSTLC(expr);
+    if ($404) {
+        var v = TypeSystem.typeInfer(TypeSystem.emptyEnv)(expr);
+        if (v instanceof Data_Maybe.Just) {
+            return "var\x0a  A:*;\x0aend\x0a\x0a" + termToSTLC(expr)(Data_Maybe.Nothing.value)(TypeSystem.emptyEnv);
+        };
+        if (v instanceof Data_Maybe.Nothing) {
+            var $407 = eq2(expr)(Structures.T_error.value);
+            if ($407) {
+                return "Sintaxe Incorreta";
+            };
+            return "Erro de Tipo";
+        };
+        throw new Error("Failed pattern match at CompileSTLC (line 571, column 21 - line 573, column 101): " + [ v.constructor.name ]);
+    };
+    return "O termo seletor do if n\xe3o pode conter vari\xe1veis.\x0aN\xe3o \xe9 poss\xedvel representar subtra\xe7\xe3o ou compara\xe7\xf5es entre naturais em STLC.";
+};
 var makeSTLCSimple = function (expr) {
-    var $356 = canMakeSTLC(expr);
-    if ($356) {
+    var $408 = canMakeSTLC(expr);
+    if ($408) {
         var v = TypeSystem.typeInfer(TypeSystem.emptyEnv)(expr);
         if (v instanceof Data_Maybe.Just) {
             return termToSTLCSimple(expr)(TypeSystem.emptyEnv);
         };
         if (v instanceof Data_Maybe.Nothing) {
-            var $359 = eq2(expr)(Structures.T_error.value);
-            if ($359) {
+            var $411 = eq2(expr)(Structures.T_error.value);
+            if ($411) {
                 return "Sintaxe Incorreta";
             };
             return "Erro de Tipo";
         };
-        throw new Error("Failed pattern match at CompileSTLC (line 489, column 25 - line 491, column 105): " + [ v.constructor.name ]);
+        throw new Error("Failed pattern match at CompileSTLC (line 562, column 25 - line 564, column 105): " + [ v.constructor.name ]);
+    };
+    return "Para gerar STLC simples os seletores de if s\xf3 podem conter express\xf5es l\xf3gicas.\x0aN\xe3o \xe9 poss\xedvel representar subtra\xe7\xe3o ou compara\xe7\xf5es entre naturais em STLC. ";
+};
+var makeSTLCSimpleNewSim = function (expr) {
+    var $412 = canMakeSTLC(expr);
+    if ($412) {
+        var v = TypeSystem.typeInfer(TypeSystem.emptyEnv)(expr);
+        if (v instanceof Data_Maybe.Just) {
+            return "var\x0a  A:*;\x0aend\x0a\x0a" + termToSTLCSimple(expr)(TypeSystem.emptyEnv);
+        };
+        if (v instanceof Data_Maybe.Nothing) {
+            var $415 = eq2(expr)(Structures.T_error.value);
+            if ($415) {
+                return "Sintaxe Incorreta";
+            };
+            return "Erro de Tipo";
+        };
+        throw new Error("Failed pattern match at CompileSTLC (line 579, column 25 - line 581, column 105): " + [ v.constructor.name ]);
     };
     return "Para gerar STLC simples os seletores de if s\xf3 podem conter express\xf5es l\xf3gicas.\x0aN\xe3o \xe9 poss\xedvel representar subtra\xe7\xe3o ou compara\xe7\xf5es entre naturais em STLC. ";
 };
@@ -682,8 +799,8 @@ export {
     termToSTLC,
     termToSTLCSimple,
     termToSTLCDefs,
+    termToSTLCDefsNewSim,
     makeDefSTLC,
-    makeDefsUsed,
     makeDefsBlock,
     validIfSelectorsSimple,
     canMakeSTLCSimple,
@@ -691,5 +808,8 @@ export {
     canMakeSTLC,
     makeSTLC,
     makeSTLCDefs,
-    makeSTLCSimple
+    makeSTLCSimple,
+    makeSTLCNewSim,
+    makeSTLCSimpleNewSim,
+    makeSTLCDefsNewSim
 };

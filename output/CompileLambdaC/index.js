@@ -83,7 +83,7 @@ var termToLCDefs = function (expr) {
         if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Or) {
             return "(or " + (termToLCDefs(expr.value1)(env) + (" " + (termToLCDefs(expr.value2)(env) + ")")));
         };
-        if (expr instanceof Structures.T_unop && expr.value0 instanceof Structures.Not) {
+        if (expr instanceof Structures.T_unop) {
             return "(not " + (termToLCDefs(expr.value1)(env) + ")");
         };
         if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Sub) {
@@ -190,7 +190,7 @@ var termToLC = function (expr) {
         if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Or) {
             return "((\\c:(||C:*.C->C->C).\\a:(||C:*.C->C->C).\\b:(||C:*.C->C->C). (c (||C:*.C->C->C)) a b)" + (termToLC(expr.value1)(env) + (" " + ("(\\C:*.\\a:C.\\b:C.a) " + (termToLC(expr.value2)(env) + ")"))));
         };
-        if (expr instanceof Structures.T_unop && expr.value0 instanceof Structures.Not) {
+        if (expr instanceof Structures.T_unop) {
             return "((\\c:(||C:*.C->C->C).\\a:(||C:*.C->C->C).\\b:(||C:*.C->C->C). (c (||C:*.C->C->C)) a b)" + (termToLC(expr.value1)(env) + (" " + ("(\\C:*.\\a:C.\\b:C.b) " + "(\\C:*.\\a:C.\\b:C.a))")));
         };
         if (expr instanceof Structures.T_binop && expr.value0 instanceof Structures.Sub) {
@@ -220,8 +220,8 @@ var makeLC = function (expr) {
         return termToLC(expr)(TypeSystem.emptyEnv);
     };
     if (v instanceof Data_Maybe.Nothing) {
-        var $151 = eq(expr)(Structures.T_error.value);
-        if ($151) {
+        var $150 = eq(expr)(Structures.T_error.value);
+        if ($150) {
             return "Sintaxe Incorreta";
         };
         return "Erro de Tipo";
@@ -288,17 +288,8 @@ var makeDefLC = function (str) {
     };
     return "?";
 };
-var makeDefsUsed = function (v) {
-    if (v instanceof Data_List_Types.Nil) {
-        return "\x0a";
-    };
-    if (v instanceof Data_List_Types.Cons) {
-        return makeDefLC(v.value0) + ("\x0a" + makeDefsUsed(v.value1));
-    };
-    throw new Error("Failed pattern match at CompileLambdaC (line 280, column 1 - line 280, column 40): " + [ v.constructor.name ]);
-};
 var makeDefsBlock = function (l) {
-    return "let\x0a" + ("  Bool    = ||C:*. C -> C -> C;\x0a" + ("  Nat     = ||C:*. (C -> C) -> C -> C;\x0a" + ("  Pair    = \\A:*. \\B:*. ||C:*. (A -> B -> C) -> C;\x0a\x0a" + (makeDefsUsed(l) + "in\x0a\x0a"))));
+    return "let\x0a" + ("  Bool    = ||C:*. C -> C -> C;\x0a" + ("  Nat     = ||C:*. (C -> C) -> C -> C;\x0a" + ("  Pair    = \\A:*. \\B:*. ||C:*. (A -> B -> C) -> C;\x0a\x0a" + (Structures.makeDefsUsed(makeDefLC)(l) + "in\x0a\x0a"))));
 };
 var makeLCDefs = function (expr) {
     var v = TypeSystem.typeInfer(TypeSystem.emptyEnv)(expr);
@@ -306,8 +297,8 @@ var makeLCDefs = function (expr) {
         return makeDefsBlock(Structures.listTermsUsed(expr)(Data_List_Types.Nil.value)) + termToLCDefs(expr)(TypeSystem.emptyEnv);
     };
     if (v instanceof Data_Maybe.Nothing) {
-        var $158 = eq(expr)(Structures.T_error.value);
-        if ($158) {
+        var $154 = eq(expr)(Structures.T_error.value);
+        if ($154) {
             return "Sintaxe Incorreta";
         };
         return "Erro de Tipo";
@@ -320,7 +311,6 @@ export {
     termToLC,
     termToLCDefs,
     makeDefLC,
-    makeDefsUsed,
     makeDefsBlock,
     makeLC,
     makeLCDefs

@@ -3,9 +3,9 @@ module CompileSTLC where
 import Prelude
 
 import Data.Int (decimal, toStringAs)
-import Data.List (List(..), (:))
+import Data.List (List(..))
 import Data.Maybe (Maybe(..))
-import Structures (BinopCode(..), Term(..), TermType(..), UnopCode(..), listTermsUsed, makeNatural)
+import Structures (BinopCode(..), Term(..), TermType(..), UnopCode(..), listTermsUsed, makeNatural, makeDefsUsed)
 import TypeSystem (Env, emptyEnv, typeInfer, update)
 
 
@@ -339,6 +339,83 @@ termToSTLCDefs expr env = case expr of
 
             _ -> "incompleto"
 
+termToSTLCDefsNewSim :: Term -> Env -> String
+termToSTLCDefsNewSim expr env = case expr of 
+            T_true  -> "true"
+            T_false -> "false"
+            T_var id -> "x_" <> id
+
+            T_if e1 e2 e3 -> "(if " <>
+                                termToSTLCDefsNewSim e1 env <> " " <>
+                                termToSTLCDefsNewSim e2 env <> " " <>
+                                termToSTLCDefsNewSim e3 env <> ")"
+
+            -- notas sobre a gereação de código 
+            -- Como STLC não tem polimorfismo, cada tipo precisa de uma definição diferente de par.
+            -- A biblioteca definida para STLC foi limitada em tipos de pares de Naturais  apenas
+            -- para criar pares de tipos compostos (Pares, Funções, ...) usar STLC ext
+            T_pair e1 e2 -> (let t1 = (typeInfer env e1) in 
+                                let t2 = (typeInfer env e2) in 
+                                if t1 == t2 then 
+                                    ("(pair "  -- <> makePairSTLC (typesSTLC (lastType t1)) <> " "
+                                    <> termToSTLCDefsNewSim e1 env <> " "
+                                    <> termToSTLCDefsNewSim e2 env <> ")")
+                                else 
+                                    "ERRO valores no par devem ser do mesmo tipo"
+                            )
+
+            T_fst e1 ->  case (typeInfer env e1) of 
+                        Just (Pair t1 t2) -> 
+                                    if t1 == t2 then
+                                        "(fst "
+                                        <> termToSTLCDefsNewSim e1 env <> ")"
+
+                                    else "ERRO valores no par devem ser do mesmo tipo"
+                        _ -> "ERRO de tipo, fst deve receber par"
+
+            T_snd e1 ->  case (typeInfer env e1) of 
+                        Just (Pair t1 t2) -> 
+                                    if t1 == t2 then
+                                        "(snd "
+                                        <>  termToSTLCDefsNewSim e1 env <> ")"
+
+                                    else "ERRO valores no par devem ser do mesmo tipo"
+                        _ -> "ERRO de tipo, fst deve receber par"
+
+
+            T_app e1 e2 -> "(" <> termToSTLCDefsNewSim e1 env <> " " <> termToSTLCDefsNewSim e2 env <> ")"
+
+            T_let id t_var e1 e2 ->  termToSTLCDefsNewSim (T_app (T_func id t_var e2) e1) env
+
+            T_func id t_var e1 ->   "(\\x_" <> id <> ": " <> typesSTLCDefs (Just t_var) <> ". " 
+                                    <> termToSTLCDefsNewSim e1 (update env id t_var) <> ")"
+
+            T_num n -> "(\\f:A->A.\\x:A." <> (makeNatural n) <> ")"
+
+            T_binop Add e1 e2 -> "(add "
+                                 <> termToSTLCDefsNewSim e1 env <> " "
+                                 <> termToSTLCDefsNewSim e2 env <> ")"
+            T_binop Mult e1 e2 -> "(mult "
+                                 <> termToSTLCDefsNewSim e1 env <> " "
+                                 <> termToSTLCDefsNewSim e2 env <> ")"
+
+            T_binop And e1 e2 -> "(and " 
+                                 <> termToSTLCDefsNewSim e1 env <> " "
+                                 <> termToSTLCDefsNewSim e2 env <> ")"
+            
+            T_binop Or e1 e2 -> "(or "
+                                 <> termToSTLCDefsNewSim e1 env <> " "
+                                 <> termToSTLCDefsNewSim e2 env <> ")"
+
+            T_unop Not e1 -> "(not " 
+                                 <> termToSTLCDefsNewSim e1 env <> ")"
+                        
+            T_natRec e1 e2 e3 -> "(natRec "
+                                <> termToSTLCDefsNewSim e1 env <> " "
+                                <> termToSTLCDefsNewSim e2 env <> " "
+                                <> termToSTLCDefsNewSim e3 env <> ")"
+
+            _ -> "incompleto"
 
 makeDefSTLC :: String -> String
 makeDefSTLC str = case str of 
@@ -359,16 +436,11 @@ makeDefSTLC str = case str of
 
     _ -> "?"
 
-makeDefsUsed :: (List String) -> String 
-makeDefsUsed Nil = "\n"
-makeDefsUsed (str : tail) = makeDefSTLC str <> "\n" <> makeDefsUsed tail
+
 
 makeDefsBlock :: (List String) -> String 
-makeDefsBlock l =  "let\n"
-
-    <> makeDefsUsed l 
-
-    <> "in\n\n"
+makeDefsBlock Nil =  ""
+makeDefsBlock l   =  "let\n" <> (makeDefsUsed makeDefSTLC l) <> "in\n\n"
 
 
 -- versão simples 
@@ -402,7 +474,7 @@ canMakeSTLCSimple expr = case expr of
             T_binop Ne _ _ -> false
             T_binop Gt _ _ -> false
             T_binop Lt _ _ -> false
-            T_unop Negate _ -> false
+            -- T_unop Negate _ -> false
             T_unop _ e1 -> canMakeSTLCSimple e1
             T_binop _ e1 e2 -> canMakeSTLCSimple e1 && canMakeSTLCSimple e2
             T_let _ _ e1 e2 -> canMakeSTLCSimple e1 && canMakeSTLCSimple e2
@@ -430,7 +502,7 @@ validIfSelector expr = case expr of
             T_binop Ne _ _ -> false
             T_binop Gt _ _ -> false
             T_binop Lt _ _ -> false
-            T_unop Negate _ -> false
+            -- T_unop Negate _ -> false
             T_unop _ e1 -> validIfSelector e1
             T_binop _ e1 e2 -> validIfSelector e1 && validIfSelector e2
             T_let _ _ e1 e2 -> validIfSelector e1 && validIfSelector e2
@@ -460,12 +532,13 @@ canMakeSTLC expr = case expr of
             T_binop Ne _ _ -> false
             T_binop Gt _ _ -> false
             T_binop Lt _ _ -> false
-            T_unop Negate _ -> false
+            -- T_unop Negate _ -> false
             T_unop _ e1 -> canMakeSTLC e1
             T_binop _ e1 e2 -> canMakeSTLC e1 && canMakeSTLC e2
             T_let _ _ e1 e2 -> canMakeSTLC e1 && canMakeSTLC e2
             T_func _ _ e1 -> canMakeSTLC e1
             T_func_system _ _ e1 -> canMakeSTLC e1
+
 
 
 makeSTLC :: Term -> String 
@@ -491,3 +564,28 @@ makeSTLCSimple expr = if canMakeSTLC expr then
                             Nothing -> if (expr == T_error) then "Sintaxe Incorreta" else "Erro de Tipo"
                     else
                         "Para gerar STLC simples os seletores de if só podem conter expressões lógicas.\nNão é possível representar subtração ou comparações entre naturais em STLC. "
+
+
+makeSTLCNewSim :: Term -> String 
+makeSTLCNewSim expr = if canMakeSTLC expr then 
+                    case typeInfer emptyEnv expr of 
+                        Just _ -> "var\n  A:*;\nend\n\n" <> (termToSTLC expr Nothing emptyEnv)
+                        Nothing -> if (expr == T_error) then "Sintaxe Incorreta" else "Erro de Tipo"
+                else
+                    "O termo seletor do if não pode conter variáveis.\nNão é possível representar subtração ou comparações entre naturais em STLC."
+
+makeSTLCSimpleNewSim :: Term -> String
+makeSTLCSimpleNewSim expr = if canMakeSTLC expr then 
+                        case typeInfer emptyEnv expr of 
+                            Just _ -> "var\n  A:*;\nend\n\n" <> (termToSTLCSimple expr emptyEnv)
+                            Nothing -> if (expr == T_error) then "Sintaxe Incorreta" else "Erro de Tipo"
+                    else
+                        "Para gerar STLC simples os seletores de if só podem conter expressões lógicas.\nNão é possível representar subtração ou comparações entre naturais em STLC. "
+
+makeSTLCDefsNewSim :: Term -> String
+makeSTLCDefsNewSim expr = if canMakeSTLC expr then 
+                        case typeInfer emptyEnv expr of 
+                            Just _ -> "var\n  A:*;\nend\n" <> makeDefsBlock (listTermsUsed expr Nil) <> termToSTLCDefsNewSim expr emptyEnv
+                            Nothing -> if (expr == T_error) then "Sintaxe Incorreta" else "Erro de Tipo"
+                    else
+                        "Não é possível representar subtração ou comparações entre naturais em STLC. "

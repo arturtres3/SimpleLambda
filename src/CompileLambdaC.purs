@@ -3,9 +3,9 @@ module CompileLambdaC where
 import Prelude
 
 import Data.Int (decimal, toStringAs)
-import Data.List (List(..), (:))
+import Data.List (List(..))
 import Data.Maybe (Maybe(..))
-import Structures (BinopCode(..), Term(..), TermType(..), UnopCode(..), listTermsUsed, makeNatural)
+import Structures (BinopCode(..), Term(..), TermType(..), UnopCode(..), listTermsUsed, makeNatural, makeDefsUsed)
 import TypeSystem (Env, emptyEnv, typeInfer, update)
 import TermLibrary (eqTerm, neTerm, gtTerm, ltTerm, subTerm)
 
@@ -277,9 +277,7 @@ makeDefLC str = case str of
     "natRec"-> "  natRec  = \\C:*. \\n:Nat. \\step: C -> C. \\init:C. n C step init;"
     _ -> "?"
 
-makeDefsUsed :: (List String) -> String 
-makeDefsUsed Nil = "\n"
-makeDefsUsed (str : tail) = makeDefLC str <> "\n" <> makeDefsUsed tail
+
 
 makeDefsBlock :: (List String) -> String 
 makeDefsBlock l =  "let\n"
@@ -288,9 +286,11 @@ makeDefsBlock l =  "let\n"
     <>   "  Pair    = \\A:*. \\B:*. ||C:*. (A -> B -> C) -> C;\n\n"
     -- <>   "  Or            = \\A:*. \\B:*. ||C:*. (A -> C) -> (B -> C) -> C;\n\n"
 
-    <> makeDefsUsed l 
+    <> makeDefsUsed makeDefLC l 
 
     <> "in\n\n"
+
+    
 
 makeLC :: Term → String
 makeLC expr = case typeInfer emptyEnv expr of 

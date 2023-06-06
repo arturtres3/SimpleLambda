@@ -49,7 +49,7 @@ parseParam = (do
 
 parseManyParams :: P (List Param)
 parseManyParams = (do
-                    paramList <- (sepEndBy1 parseParam (reservedOp ";"))
+                    paramList <- (sepEndBy1 (parens parseParam) (whiteSpace))
                     pure (toList paramList))
                 
 
@@ -60,9 +60,9 @@ makeFunc ((Tuple id t) : tail) body = (T_func id t (makeFunc tail body))
 parseFunc :: P Term
 parseFunc = (do 
             reserved "func"
-            list <- parens parseManyParams
+            list <- parseManyParams
             reservedOp "=>"
-            e1 <- expr -- parens (expr)
+            e1 <- expr
             pure (makeFunc list e1)
             )
 

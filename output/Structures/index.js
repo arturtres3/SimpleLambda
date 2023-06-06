@@ -11,13 +11,6 @@ var Not = /* #__PURE__ */ (function () {
     Not.value = new Not();
     return Not;
 })();
-var Negate = /* #__PURE__ */ (function () {
-    function Negate() {
-
-    };
-    Negate.value = new Negate();
-    return Negate;
-})();
 var Nat = /* #__PURE__ */ (function () {
     function Nat() {
 
@@ -76,13 +69,6 @@ var Mult = /* #__PURE__ */ (function () {
     };
     Mult.value = new Mult();
     return Mult;
-})();
-var Div = /* #__PURE__ */ (function () {
-    function Div() {
-
-    };
-    Div.value = new Div();
-    return Div;
 })();
 var Lt = /* #__PURE__ */ (function () {
     function Lt() {
@@ -323,13 +309,7 @@ var T_error = /* #__PURE__ */ (function () {
 })();
 var showUnop = {
     show: function (v) {
-        if (v instanceof Negate) {
-            return "-";
-        };
-        if (v instanceof Not) {
-            return "~";
-        };
-        throw new Error("Failed pattern match at Structures (line 104, column 1 - line 106, column 17): " + [ v.constructor.name ]);
+        return "~";
     }
 };
 var show = /* #__PURE__ */ Data_Show.show(showUnop);
@@ -361,9 +341,6 @@ var showBinop = {
         };
         if (v instanceof Mult) {
             return "*";
-        };
-        if (v instanceof Div) {
-            return "/";
         };
         if (v instanceof Lt) {
             return " < ";
@@ -450,6 +427,17 @@ var makeNatural = function (v) {
     };
     return "(f " + (makeNatural(v - 1 | 0) + ")");
 };
+var makeDefsUsed = function (v) {
+    return function (v1) {
+        if (v1 instanceof Data_List_Types.Nil) {
+            return "\x0a";
+        };
+        if (v1 instanceof Data_List_Types.Cons) {
+            return v(v1.value0) + ("\x0a" + makeDefsUsed(v)(v1.value1));
+        };
+        throw new Error("Failed pattern match at Structures (line 144, column 1 - line 144, column 62): " + [ v.constructor.name, v1.constructor.name ]);
+    };
+};
 var listTermsUsed = function (expr) {
     return function (l) {
         if (expr instanceof T_true) {
@@ -482,7 +470,7 @@ var listTermsUsed = function (expr) {
         if (expr instanceof T_let) {
             return union(union(listTermsUsed(expr.value2)(l))(l))(listTermsUsed(expr.value3)(l));
         };
-        if (expr instanceof T_unop && expr.value0 instanceof Not) {
+        if (expr instanceof T_unop) {
             return union(union(new Data_List_Types.Cons("not", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l));
         };
         if (expr instanceof T_binop && expr.value0 instanceof Add) {
@@ -493,9 +481,6 @@ var listTermsUsed = function (expr) {
         };
         if (expr instanceof T_binop && expr.value0 instanceof Or) {
             return union(union(union(new Data_List_Types.Cons("or", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
-        };
-        if (expr instanceof T_binop && expr.value0 instanceof Div) {
-            return union(union(union(new Data_List_Types.Cons("div", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
         };
         if (expr instanceof T_binop && expr.value0 instanceof Mult) {
             return union(union(union(new Data_List_Types.Cons("mult", Data_List_Types.Nil.value))(l))(listTermsUsed(expr.value1)(l)))(listTermsUsed(expr.value2)(l));
@@ -521,13 +506,7 @@ var listTermsUsed = function (expr) {
 var eqUnop = {
     eq: function (x) {
         return function (y) {
-            if (x instanceof Not && y instanceof Not) {
-                return true;
-            };
-            if (x instanceof Negate && y instanceof Negate) {
-                return true;
-            };
-            return false;
+            return true;
         };
     }
 };
@@ -562,9 +541,6 @@ var eqBinop = {
                 return true;
             };
             if (x instanceof Mult && y instanceof Mult) {
-                return true;
-            };
-            if (x instanceof Div && y instanceof Div) {
                 return true;
             };
             if (x instanceof Lt && y instanceof Lt) {
@@ -656,7 +632,6 @@ export {
     Add,
     Sub,
     Mult,
-    Div,
     Lt,
     Gt,
     Eq,
@@ -664,7 +639,6 @@ export {
     And,
     Or,
     Not,
-    Negate,
     T_true,
     T_false,
     T_num,
@@ -686,6 +660,7 @@ export {
     showType,
     makeNatural,
     listTermsUsed,
+    makeDefsUsed,
     showTerm$prime,
     showType$prime,
     eqTermType,

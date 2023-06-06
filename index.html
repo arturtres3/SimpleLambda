@@ -13,23 +13,29 @@
     <script src="./index.js" type="module"></script>
     <h1>Simple &lambda;</h1>
 
+    <!-- 
     <p>
-      <!-- <a href="https://www.inf.ufrgs.br/~rma/simuladores/lambdaTyped.html">https://www.inf.ufrgs.br/~rma/simuladores/lambdaTyped.html</a> -->
-    </p>
+      <a href="https://www.inf.ufrgs.br/~rma/simuladores/lambdaTyped.html">https://www.inf.ufrgs.br/~rma/simuladores/lambdaTyped.html</a>
+    </p> 
+    -->
 
     <form class="targetSelect">
+
+      <input type="radio" id="Lambda" name="language" value="0">
+      <label for="Lambda">Sem Tipos</label>
       
-      <input type="radio" id="STLC" name="language" value="0" >
+      <input type="radio" id="STLC" name="language" value="1" >
       <label for="STLC" >STLC</label>
 
-      <input type="radio" id="Lambda2" name="language" value="1" >
+      <input type="radio" id="Lambda2" name="language" value="2" >
       <label for="Lambda2">Lambda 2</label>
 
-      <input type="radio" id="LambdaOmega" name="language" value="2">
+      <input type="radio" id="LambdaOmega" name="language" value="3" checked>
       <label for="LambdaOmega">Lambda Omega</label>
 
-      <input type="radio" id="LambdaC" name="language" value="3">
+      <input type="radio" id="LambdaC" name="language" value="4">
       <label for="LambdaC">Lambda C</label>
+
         
     </form>
 
@@ -37,6 +43,11 @@
       
       <input type="checkbox" id="Defs" name="language" value="0" checked>
       <label for="Defs">Definições</label>
+
+      <br>
+
+      <input type="checkbox" id="NewSim" name="language" value="2">
+      <label id="NewSimLabel" for="NewSim">Novo Simulador</label>
         
       <br>
 

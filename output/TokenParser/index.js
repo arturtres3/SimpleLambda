@@ -96,7 +96,7 @@ var parseParam = /* #__PURE__ */ bind(identifier)(function (id) {
         });
     });
 });
-var parseManyParams = /* #__PURE__ */ bind(/* #__PURE__ */ Parsing_Combinators.sepEndBy1(parseParam)(/* #__PURE__ */ reservedOp(";")))(function (paramList) {
+var parseManyParams = /* #__PURE__ */ bind(/* #__PURE__ */ Parsing_Combinators.sepEndBy1(/* #__PURE__ */ parens(parseParam))(whiteSpace))(function (paramList) {
     return pure(Data_List_NonEmpty.toList(paramList));
 });
 var parseTerm = function (p) {
@@ -115,7 +115,7 @@ var $lazy_parseFst = /* #__PURE__ */ $runtime_lazy("parseFst", "TokenParser", fu
 });
 var $lazy_parseFunc = /* #__PURE__ */ $runtime_lazy("parseFunc", "TokenParser", function () {
     return discard(reserved("func"))(function () {
-        return bind(parens(parseManyParams))(function (list) {
+        return bind(parseManyParams)(function (list) {
             return discard(reservedOp("=>"))(function () {
                 return bind($lazy_expr(65))(function (e1) {
                     return pure(makeFunc(list)(e1));
